@@ -87,8 +87,8 @@ function enc(n,d)
   elseif n == 3 then
     params:delta("structure", d)
     --print("structure", string.format("%.2f", params:get("structure")))
-  elseif n == 4 then
-    params:delta("damping", d)
+--  elseif n == 4 then
+--    params:delta("damping", d)
     --print("damping", string.format("%.2f", params:get("damping")))
   end
   redraw()
@@ -132,10 +132,10 @@ function redraw()
   screen.move(120, 54)
   screen.text_right(string.format("%.2f", params:get("structure")))
 
-  screen.move(8, 60)
-  screen.text("damp:  ")
-  screen.move(120, 60)
-  screen.text_right(string.format("%.2f", params:get("damping")))
+--  screen.move(8, 60)
+--  screen.text("damp:  ")
+--  screen.move(120, 60)
+--  screen.text_right(string.format("%.2f", params:get("damping")))
 
   draw_ring(-20,-5,6)
   draw_ring(30,-9,9)

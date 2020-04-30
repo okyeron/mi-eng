@@ -13,7 +13,7 @@ local position = 0.0 -- (0 -- 1)
 local size = 0.2 -- (0 -- 1)
 local dens = 0.5 -- (0 -- 1)
 local texture = 0.1 -- (0 -- 1)
-local drywet = 0 -- (0 -- 1)
+local drywet = 0.5 -- (0 -- 1)
 local in_gain = 2 -- 0.125 -- 8
 local spread = 1 -- (0 -- 1)
 local rvb = 0.2 -- (0 -- 1)
@@ -99,8 +99,8 @@ function enc(n,d)
   elseif n == 3 then
     params:delta("density", d)
     --print("density",string.format("%.2f", params:get("density")))
-  elseif n == 4 then
-    params:delta("drywet", d)
+--  elseif n == 4 then
+--    params:delta("drywet", d)
     --print("density",string.format("%.2f", params:get("density")))
   end
   redraw()
@@ -130,10 +130,10 @@ function redraw()
   screen.level(15)
 
 
-  screen.move(8, 8)
-  screen.text("wet:  ")
-  screen.move(120, 8)
-  screen.text_right(string.format("%.2f", params:get("drywet")))
+  --screen.move(8, 8)
+  --screen.text("wet:  ")
+  --screen.move(120, 8)
+  --screen.text_right(string.format("%.2f", params:get("drywet")))
 
   screen.move(8, 48)
   screen.text("size:  ")
