@@ -53,6 +53,17 @@ Engine_MiRings : CroneEngine {
       ],
     context.xg);
 
+	//noteOn(note)
+    this.addCommand("noteOn", "i", {|msg|
+      synth.set(\pit, msg[1]);
+      synth.set(\trig, 1);
+      synth.set(\intern_exciter, 1);
+    }); 
+ 
+     this.addCommand("noteOff", "i", {|msg|
+      synth.set(\trig, 0);
+    }); 
+
     this.addCommand("trig", "f", {|msg|
       synth.set(\trig, msg[1]);
     }); 

@@ -1,7 +1,7 @@
 --
 --          rings
 --
---    v 0.2.0 @okyeron
+--    v 0.2.1 @okyeron
 --
 -- Based on the supercollider UGens by Volker Bohm https://github.com/v7b1/mi-UGens
 --
@@ -19,9 +19,23 @@ local poly = 4
 local intern_exciter = 0
 local bypass = 0
 local easteregg = 0
+local current_note = pitch
 
 -- 		arg in=0, trig=0, pit=60.0, struct=0.25, bright=0.5, damp=0.7, pos=0.25, model=0, poly=1,
 --		intern_exciter=0, easteregg=0, bypass=0, mul=1.0, add=0;
+local current_note = pitch
+local mo = midi.connect() -- defaults to port 1 (which is set in SYSTEM > DEVICES)
+mo.event = function(data) 
+  d = midi.to_msg(data)
+  if d.type == "note_on" then
+    --print ("note-on: ".. d.note .. ", velocity:" .. d.vel)
+    current_note = d.note
+    engine.noteOn(d.note)
+    redraw()
+  elseif d.type == "note_off" then
+    engine.noteOff(0)
+  end 
+end
 
 function init()
   -- initialization
@@ -92,8 +106,8 @@ function enc(n,d)
   elseif n == 3 then
     params:delta("structure", d)
     --print("structure", string.format("%.2f", params:get("structure")))
---  elseif n == 4 then
---    params:delta("damping", d)
+  elseif n == 4 then
+    params:delta("damping", d)
     --print("damping", string.format("%.2f", params:get("damping")))
   end
   redraw()
@@ -122,6 +136,11 @@ function redraw()
   screen.aa(0)
   screen.level(15)
 
+  screen.move(8, 32)
+  screen.text("note:  ")
+  screen.move(120, 32)
+  screen.text_right(current_note)
+
   screen.move(8, 42)
   screen.text("bright:  ")
   screen.move(120, 42)
@@ -137,10 +156,10 @@ function redraw()
   screen.move(120, 54)
   screen.text_right(string.format("%.2f", params:get("structure")))
 
---  screen.move(8, 60)
---  screen.text("damp:  ")
---  screen.move(120, 60)
---  screen.text_right(string.format("%.2f", params:get("damping")))
+  screen.move(8, 60)
+  screen.text("damp:  ")
+  screen.move(120, 60)
+  screen.text_right(string.format("%.2f", params:get("damping")))
 
   draw_ring(-20,-5,6)
   draw_ring(30,-9,9)
