@@ -87,7 +87,7 @@ Engine_MiPlaits : CroneEngine {
       synth.set(\decay, msg[1]);
     });
     this.addCommand("lpg_colour", "f", {|msg|
-      synth.set(\add, msg[1]);
+      synth.set(\lpg_colour, msg[1]);
     });
     this.addCommand("mul", "f", {|msg|
       synth.set(\mul, msg[1]);
