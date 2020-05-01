@@ -1,5 +1,10 @@
 --
---          ringy
+--          rings
+--
+--    v 0.2.0 @okyeron
+--
+-- Based on the supercollider UGens by Volker Bohm https://github.com/v7b1/mi-UGens
+--
 --
 
 engine.name = "MiRings"
