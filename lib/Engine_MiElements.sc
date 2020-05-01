@@ -116,7 +116,7 @@ Engine_MiElements : CroneEngine {
     this.addCommand("space", "f", {|msg|
       synth.set(\space, msg[1]);
     });
-    this.addCommand("model", "f", {|msg|
+    this.addCommand("model", "i", {|msg|
       synth.set(\model, msg[1]);
     });
     this.addCommand("mul", "f", {|msg|

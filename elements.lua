@@ -15,22 +15,22 @@ engine.name = "MiElements"
 		--mul=1.0, add=0;
 
 local gate = 0 -- (open for positive input values)
-local pit = 48 -- (midi note)
+local pit = 52 -- (midi note)
 local strength = 0.5 --(0 -- 1)
 local contour = 0.2
-local bow_level = 0
-local blow_level = 0
-local strike_level = 0
-local flow = 0.5
+local bow_level = 0.2
+local blow_level = 0.35
+local strike_level = 0.05
+local flow = 0.25
 local mallet = 0.5
-local bow_timb = 0.5
-local blow_timb = 0.5
+local bow_timb = 0.4
+local blow_timb = 0.6
 local strike_timb = 0.5
-local geom = 0.25
-local bright = 0.5
-local damp = 0.7
-local pos = 0.2
-local space = 0.3
+local geom = 0.4
+local bright = 0.2
+local damp = 0.5
+local pos = 0
+local space = 0.5
 local model = 0
 local mul = 1.0
 local add = 0
@@ -125,7 +125,7 @@ function init()
   params:add_control("space", "space", controlspec.new(0.00, 1.00, "lin", 0.01, space, ""))
   params:set_action("space", function(value) engine.space(value) end)
   
-  params:add_control("model", "model", controlspec.new(0.00, 1.00, "lin", 0.01, model, ""))
+  params:add_control("model", "model", controlspec.new(0, 2, "lin", 1, model, ""))
   params:set_action("model", function(value) engine.model(value) end)
 
   params:add_control("mul", "mul", controlspec.new(0.00, 1.00, "lin", 0.01, mul, ""))
@@ -147,17 +147,17 @@ end
 function enc(n,d)
   -- encoder actions: n = number, d = delta
   if n == 1 then
-    params:delta("geom", d)
-    print("geom", string.format("%.2f", params:get("geom")))
-  elseif n == 2 then
     params:delta("bright", d)
-    print("bright", string.format("%.2f", params:get("bright")))
+    --print("blow_level", string.format("%.2f", params:get("bright")))
+  elseif n == 2 then
+    params:delta("pos", d)
+    --print("strike_level", string.format("%.2f", params:get("pos")))
   elseif n == 3 then
     params:delta("space", d)
-    print("space", string.format("%.2f", params:get("space")))
+    --print("flow", string.format("%.2f", params:get("space")))
   elseif n == 4 then
-    params:delta("contour", d)
-    print("contour", string.format("%.2f", params:get("contour")))
+    params:delta("damp", d)
+    --print("mallet", string.format("%.2f", params:get("damp")))
   end
   redraw()
 end
@@ -169,10 +169,13 @@ function redraw()
   screen.aa(0)
   screen.level(15)
 
-  screen.move(8, 8)
+  screen.move(8, 16)
+  screen.font_face(3)
+  screen.font_size(16)
   screen.text("elements  ")
 
-
+  screen.font_face(1)
+  screen.font_size(8)
   screen.move(8, 32)
   screen.text("note:  ")
   screen.move(120, 32)
@@ -180,14 +183,14 @@ function redraw()
 
 
   screen.move(8, 42)
-  screen.text("geom:  ")
+  screen.text("bright:  ")
   screen.move(120, 42)
-  screen.text_right(string.format("%.2f", params:get("geom")))
+  screen.text_right(string.format("%.2f", params:get("bright")))
 
   screen.move(8, 48)
-  screen.text("bright:  ")
+  screen.text("pos:  ")
   screen.move(120, 48)
-  screen.text_right(string.format("%.2f", params:get("bright")))
+  screen.text_right(string.format("%.2f", params:get("pos")))
 
   screen.move(8, 54)
   screen.text("space:  ")
@@ -195,9 +198,9 @@ function redraw()
   screen.text_right(string.format("%.2f", params:get("space")))
 
   screen.move(8, 60)
-  screen.text("contour:  ")
+  screen.text("damp:  ")
   screen.move(120, 60)
-  screen.text_right(string.format("%.2f", params:get("contour")))
+  screen.text_right(string.format("%.2f", params:get("damp")))
 
 
 
