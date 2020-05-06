@@ -4,18 +4,21 @@
 --    ----------------
 --     --  ----  ---
 --      -   --    -
---    v 0.2.0 @okyeron
+--    v 0.3.0 @okyeron
 --
 -- Based on the supercollider UGens by Volker Bohm https://github.com/v7b1/mi-UGens
 --
 --
 
+local UI = require "ui"
+local miClouds = require "mi-eng/lib/miclouds_engine"
+
 engine.name = "MiClouds"
 
 local pitch = 0 -- (+-48.0)
-local position = 0.0 -- (0 -- 1)
+local position = 0.6 -- (0 -- 1)
 local size = 0.2 -- (0 -- 1)
-local dens = 0.5 -- (0 -- 1)
+local dens = 0.25 -- (0 -- 1)
 local texture = 0.1 -- (0 -- 1)
 local drywet = 0.5 -- (0 -- 1)
 local in_gain = 2 -- 0.125 -- 8
@@ -27,85 +30,74 @@ local mode = 0 -- (0 -- 3)
 local lofi = 0 -- (0 -- 1)
 local trig = 0 -- (0 -- 1)
 
+local controls = {}
+local param_assign = {"pitch","position","grainsize","density","texture","drywet","in_gain","reverb","spread","feedback","freeze","mode","lofi"}
+
+
 function init()
-  -- initialization
-  engine.pit(pitch)
-  engine.pos(position)
-  engine.size(size)
-  engine.dens(dens)
-  engine.tex(texture)
-  engine.drywet(drywet)
-  engine.in_gain(in_gain)
-  engine.rvb(rvb)
-  engine.spread(spread)
-  engine.fb(feedback)
-  engine.freeze(freeze)
-  engine.mode(mode)
-  engine.lofi(lofi)
+-- Add params
+  miClouds.add_params()  
+
+  -- initialize params
+  params:set("pitch", pitch)
+  params:set("position",position)
+  params:set("grainsize",size)
+  params:set("density",dens)
+  params:set("texture",texture)
+  params:set("drywet",drywet)
+  params:set("in_gain",in_gain)
+  params:set("reverb",rvb)
+  params:set("spread",spread)
+  params:set("feedback",feedback)
+  params:set("freeze",freeze)
+  params:set("mode",mode)
+  params:set("lofi",lofi)
   
-  params:add_control("pitch", "pitch", controlspec.new(-48, 48, "lin", 1, pitch, ""))
-  params:set_action("pitch", function(value) engine.pit(value) end)
 
-  params:add_control("position", "position", controlspec.new(0.00, 1.00, "lin", 0.05, position, ""))
-  params:set_action("position", function(value) engine.pos(value) end)
-
-  params:add_control("grainsize", "grainsize", controlspec.new(0.00, 1.00, "lin", 0.01, size, ""))
-  params:set_action("grainsize", function(value) engine.size(value) end)
-
-  params:add_control("density", "density", controlspec.new(0.00, 1.00, "lin", 0.01, dens, ""))
-  params:set_action("density", function(value) engine.dens(value) end)
-
-  params:add_control("texture", "texture", controlspec.new(0.00, 1.00, "lin", 0.05, texture, ""))
-  params:set_action("texture", function(value) engine.tex(value) end)
-
-  params:add_control("reverb", "reverb", controlspec.new(0.00, 1.00, "lin", 0.05, rvb, ""))
-  params:set_action("reverb", function(value) engine.rvb(value) end)
-
-  params:add_control("in_gain", "in_gain", controlspec.new(0.125, 7.00, "lin", 0.05, in_gain, ""))
-  params:set_action("in_gain", function(value) engine.in_gain(value) end)
-
-  params:add_control("spread", "spread", controlspec.new(0.00, 1.00, "lin", 0.01, spread, ""))
-  params:set_action("spread", function(value) engine.spread(value) end)
-
-  params:add_control("feedback", "feedback", controlspec.new(0.00, 1.00, "lin", 0.01, feedback, ""))
-  params:set_action("feedback", function(value) engine.fb(value) end)
-
-  params:add_control("drywet", "drywet", controlspec.new(0.00, 1.00, "lin", 0.01, drywet, ""))
-  params:set_action("drywet", function(value) engine.drywet(value) end)
-
-  params:add_control("freeze", "freeze", controlspec.new(0, 1, "lin", 1, freeze, ""))
-  params:set_action("freeze", function(value) engine.freeze(value) end)
-
-  params:add_control("mode", "mode", controlspec.new(0, 3, "lin", 1, mode, ""))
-  params:set_action("mode", function(value) engine.mode(value) end)
+  -- UI
+  controls[3] = UI.Dial.new(6, 4, 10, 0, 0, 1, 0.01)
+  controls[2] = UI.Dial.new(6, 48, 10, 0, 0, 1, 0.01)
+  controls[4] = UI.Dial.new(110, 48, 10, 0, 0, 1, 0.01)
+  
+  for uis = 2, 4 do
+    controls[uis]:set_value (params:get(param_assign[uis]))
+  end 
 
   redraw()
 end
 
 function key(n,z)
+  -- key actions: n = number, z = state
   if n == 2 and z == 1 then
     engine.freeze(1)
   else
     engine.freeze(0)
   end
+   if n == 3 and z == 1 then
+    engine.trig(1)
+  else
+    engine.trig(0)
+  end
   
-  -- key actions: n = number, z = state
 end
 
 function enc(n,d)
   -- encoder actions: n = number, d = delta
   if n == 1 then
     params:delta("grainsize", d)
+    controls[3]:set_value (params:get("grainsize"))
     --print("grainsize", string.format("%.2f", params:get("grainsize")))
   elseif n == 2 then
     params:delta("position", d)
+    controls[2]:set_value (params:get("position"))
     --print("position",string.format("%.2f", params:get("position")))
   elseif n == 3 then
     params:delta("density", d)
+    controls[4]:set_value (params:get("density"))
     --print("density",string.format("%.2f", params:get("density")))
 --  elseif n == 4 then
 --    params:delta("drywet", d)
-    --print("density",string.format("%.2f", params:get("density")))
+    --print("density",string.format("%.2f", params:get("drywet")))
   end
   redraw()
 end
@@ -133,29 +125,36 @@ function redraw()
   screen.aa(0)
   screen.level(15)
 
+  screen.move(0,0)
+  screen.stroke()
+
+  for uis = 2, 4 do
+    controls[uis]:redraw()
+  end
+
 
   --screen.move(8, 8)
   --screen.text("wet:  ")
   --screen.move(120, 8)
   --screen.text_right(string.format("%.2f", params:get("drywet")))
 
-  screen.move(8, 48)
-  screen.text("size:  ")
-  screen.move(120, 48)
-  screen.text_right(string.format("%.2f", params:get("grainsize")))
-  screen.move(8, 54)
-  screen.text("pos:  ")
-  screen.move(120, 54)
-  screen.text_right(string.format("%.2f", params:get("position")))
-  screen.move(8, 60)
-  screen.text("dens:  ")
-  screen.move(120, 60)
-  screen.text_right(string.format("%.2f", params:get("density")))
+  screen.move(21, 12)
+  screen.text("size")
+  --screen.move(120, 48)
+  --screen.text_right(string.format("%.2f", params:get("grainsize")))
+  screen.move(21, 62)
+  screen.text("pos")
+  --screen.move(120, 54)
+  --screen.text_right(string.format("%.2f", params:get("position")))
+  screen.move(85, 62)
+  screen.text("dens")
+  --screen.move(120, 60)
+  --screen.text_right(string.format("%.2f", params:get("density")))
 
   
-  draw_cloud(-20,-2,6)
-  draw_cloud(30,-3,8)
-  draw_cloud(0,10,10)
+  draw_cloud(-16,0,1)
+  draw_cloud(32,-1,2)
+  draw_cloud(2,12,4)
 
   
   screen.update()

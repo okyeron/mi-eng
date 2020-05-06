@@ -1,11 +1,18 @@
 --
 --         plaits
 --
---    v 0.1.0 @okyeron
+--    v 0.2.5 @okyeron
+--
+--
+--
+--
 --
 -- Based on the supercollider UGens by Volker Bohm https://github.com/v7b1/mi-UGens
 --
 --
+
+local UI = require "ui"
+local miPlaits = require "mi-eng/lib/miplaits_engine"
 
 engine.name = "MiPlaits"
 
@@ -17,6 +24,7 @@ engine.name = "MiPlaits"
 -- 4:additive_engine, 5:wavetable_engine, 6:chord_engine, 7:speech_engine, 
 -- 8:swarm_engine, 9:noise_engine, 10:particle_engine, 11:string_engine, 
 -- 12:modal_engine, 13:bass_drum_engine, 14:snare_drum_engine, 15:hi_hat_engine
+
 
 
 local pitch = 35.0	--(midi note)
@@ -31,7 +39,27 @@ local timb_mod = 0
 local morph_mod = 0.0
 local decay = 0 	--(0. -- 1.)
 local lpg_colour = 0	--(0. -- 1.)
-local mul	= 0.25 -- (output gain)
+--local mul	= 0.25 -- (output gain)
+
+local param_assign = {"pitch","engine","harmonics","timbre","timb_mod","morph","morph_mod","fm_mod","level","decay","lpg_colour","trigger"}
+
+local plaits_engines = {"virtual analog","waveshaping","fm","grain","additive","wavetable","chord","speech","swarm","noise","particle","string","modal","bass drum","snare drum","hi hat"}
+
+controls = {}
+controls.pitch = {}
+controls.engine = {}
+controls.harmonics = {}
+controls.timbre = {}
+controls.timb_mod = {}
+controls.morph = {}
+controls.morph_mod = {}
+controls.fm_mod = {}
+controls.level = {}
+controls.decay = {}
+controls.lpg_colour = {}
+
+
+local message = ""
 
 local current_note = pitch
 local mo = midi.connect() -- defaults to port 1 (which is set in SYSTEM > DEVICES)
@@ -49,56 +77,46 @@ mo.event = function(data)
 end
 
 function init()
-  -- initialization
-  engine.pitch(pitch)
-  engine.eng(eng) 
-  engine.harm(harm)
-  engine.timbre(timbre)
-  engine.morph(morph)
-  engine.trigger(trig)
-  engine.level(level)
-  engine.fm_mod(fm_mod)
-  engine.timb_mod(timb_mod)
-  engine.morph_mod(morph_mod)
-  engine.decay(decay)
-  engine.lpg_colour(lpg_colour)
 
+  -- Add params
+  miPlaits.add_params()
 
-  params:add_control("pitch", "pitch", controlspec.new(0, 100, "lin", 1, pitch, ""))
-  params:set_action("pitch", function(value) engine.pitch(value) end)
+  -- initialize params  
+  params:set("pitch", pitch)
+  params:set("engine",eng)
+  params:set("harmonics",harm)
+  params:set("timbre",timbre)
+  params:set("timb_mod",timb_mod)
+  params:set("morph",morph)
+  params:set("morph_mod",morph_mod)
+  params:set("fm_mod",fm_mod)
+  params:set("trigger",trig)
+  params:set("level",level)
+  params:set("decay",decay)
+  params:set("lpg_colour",lpg_colour)
+  
+  -- UI
+  local row1 = 12
+  local row2 = 30
+  local row3 = 48
+  
+  controls.pitch.ui = UI.Dial.new(5, row3, 10, 1, 1, 127, 1)
+  controls.engine.ui = UI.Dial.new(110, row3, 10, 1, 1, 15, 1)
 
-  params:add_control("engine", "engine", controlspec.new(0, 15, "lin", 1, eng, ""))
-  params:set_action("engine", function(value) engine.eng(value) end)
+  controls.harmonics.ui = UI.Dial.new(5, row1, 10, 0, 0, 1, 0.01)
+  controls.timbre.ui = UI.Dial.new(5+18, row1, 10, 0, 0, 1, 0.01)
+  controls.timb_mod.ui = UI.Dial.new(5+(18*2), row1, 10, 0, 0, 1, 0.01)
+  controls.morph.ui = UI.Dial.new(5+(18*3), row1, 10, 0, 0, 1, 0.01)
+  controls.morph_mod.ui = UI.Dial.new(5+(18*4), row1, 10, 0, 0, 1, 0.01)
 
-  params:add_control("harmonics", "harmonics", controlspec.new(0.00, 1.00, "lin", 0.01, harm, ""))
-  params:set_action("harmonics", function(value) engine.harm(value) end)
+  controls.fm_mod.ui = UI.Dial.new(5, row2, 10, 0, 0, 1, 0.01)
+  controls.level.ui = UI.Dial.new(5+18, row2, 10, 0, 0, 1, 0.01)
+  controls.decay.ui = UI.Dial.new(5+(18*2), row2, 10, 0, 0, 1, 0.01)
+  controls.lpg_colour.ui = UI.Dial.new(5+(18*3), row2, 10, 0, 0, 1, 0.01)
 
-  params:add_control("timbre", "timbre", controlspec.new(0.00, 1.00, "lin", 0.01, timbre, ""))
-  params:set_action("timbre", function(value) engine.timbre(value) end)
-
-  params:add_control("morph", "morph", controlspec.new(0.00, 1.00, "lin", 0.01, morph, ""))
-  params:set_action("morph", function(value) engine.morph(value) end)
-
-  params:add_control("trigger", "trigger", controlspec.new(0, 1, "lin", 1, trig, ""))
-  params:set_action("trigger", function(value) engine.trigger(value) end)
-
-  params:add_control("level", "level", controlspec.new(1, 15, "lin", 1, level, ""))
-  params:set_action("level", function(value) engine.level(value) end)
-
-  params:add_control("fm_mod", "fm_mod", controlspec.new(0, 15, "lin", 1, fm_mod, ""))
-  params:set_action("fm_mod", function(value) engine.fm_mod(value) end)
- 
-  params:add_control("timb_mod", "timb_mod", controlspec.new(0, 15, "lin", 1, timb_mod, ""))
-  params:set_action("timb_mod", function(value) engine.timb_mod(value) end)
-
-  params:add_control("morph_mod", "morph_mod", controlspec.new(0, 15, "lin", 1, morph_mod, ""))
-  params:set_action("morph_mod", function(value) engine.morph_mod(value) end)
-
-  params:add_control("decay", "decay", controlspec.new(0.00, 1.00, "lin", 0.01, decay, ""))
-  params:set_action("decay", function(value) engine.decay(value) end)
-
-  params:add_control("lpg_colour", "lpg_colour", controlspec.new(0.00, 1.00, "lin", 0.01, lpg_colour, ""))
-  params:set_action("lpg_colour", function(value) engine.lpg_colour(value) end)
+  for k,v in pairs(controls) do
+     controls[k].ui:set_value (params:get(k))
+  end  
   
   redraw()
 end
@@ -118,15 +136,23 @@ function enc(n,d)
   if n == 1 then
     params:delta("harmonics", d)
     print("harmonics", string.format("%.2f", params:get("harmonics")))
+    controls.harmonics.ui:set_value (params:get("harmonics"))
+    message = "harmonics"
   elseif n == 2 then
     params:delta("timbre", d)
     print("timbre", string.format("%.2f", params:get("timbre")))
+    controls.timbre.ui:set_value (params:get("timbre"))
+    message = "timbre"
   elseif n == 3 then
     params:delta("morph", d)
     print("morph", string.format("%.2f", params:get("morph")))
+    controls.morph.ui:set_value (params:get("morph"))
+    message = "morph"
   elseif n == 4 then
     params:delta("engine", d)
-    print("engine", string.format("%.2f", params:get("engine")))
+    print("engine", string.format("%i", params:get("engine")))
+    controls.engine.ui:set_value (params:get("engine"))
+    message = "engine: " .. plaits_engines[params:get("engine")]
   end
   redraw()
 end
@@ -138,36 +164,25 @@ function redraw()
   screen.aa(0)
   screen.level(15)
 
+  screen.move(0,0)
+  screen.stroke()
+
+  for k,v in pairs(controls) do
+      controls[k].ui:redraw()
+  end 
+
+--  for uis = 1, 11 do
+    --controls[uis][1]:redraw()
+--  end
+
+
   screen.move(8, 8)
   screen.text("plaits  ")
 
 
-  screen.move(8, 32)
-  screen.text("note:  ")
-  screen.move(120, 32)
-  screen.text_right(current_note)
 
-
-  screen.move(8, 42)
-  screen.text("harmonics:  ")
-  screen.move(120, 42)
-  screen.text_right(string.format("%.2f", params:get("harmonics")))
-
-  screen.move(8, 48)
-  screen.text("timbre:  ")
-  screen.move(120, 48)
-  screen.text_right(string.format("%.2f", params:get("timbre")))
-
-  screen.move(8, 54)
-  screen.text("morph:  ")
-  screen.move(120, 54)
-  screen.text_right(string.format("%.2f", params:get("morph")))
-
-  screen.move(8, 60)
-  screen.text("engine:  ")
-  screen.move(120, 60)
-  screen.text_right(string.format("%.2f", params:get("engine")))
-
+  screen.move(128, 8)
+  screen.text_right(message)
 
 
   screen.update()
