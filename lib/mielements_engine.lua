@@ -17,7 +17,9 @@ function miElements.add_params()
     controlspec = cs.new(0, 1, "lin", 1, 0, ""), action = engine.gate}
     
   params:add{type = "control", id = "pit", name = "pit",
-    controlspec = cs.new(0, 127, "lin", 1, 36, ""), action = engine.pit}
+    --controlspec = cs.new(0, 127, "lin", 1, 36, ""), action = engine.pit}
+    controlspec = controlspec.MIDINOTE, action = engine.pit}
+  
   params:add{type = "control", id = "strength", name = "strength",
     controlspec = cs.new(0.00, 1.00, "lin", 0.01, 0.5, ""), action = engine.strength}
   params:add{type = "control", id = "contour", name = "contour",
@@ -50,6 +52,7 @@ function miElements.add_params()
     controlspec = cs.new(0.00, 1.00, "lin", 0.01, 0.3, ""), action = engine.space}
   params:add{type = "control", id = "model", name = "model",
     controlspec = cs.new(0, 2, "lin", 1, 0, ""), action = engine.model}
+
   params:add{type = "control", id = "mul", name = "mul",
     controlspec = cs.new(0.00, 1.00, "lin", 0.01, 1.0, ""), action = engine.mul}
 end
