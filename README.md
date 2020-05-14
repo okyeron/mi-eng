@@ -1,5 +1,5 @@
 # mi-eng
-mutable instruments engines for norns
+engines for norns based on mutable instruments adaptations. 
 
 Based on the supercollider UGens by Volker Bohm https://github.com/v7b1/mi-UGens
 
