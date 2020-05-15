@@ -1,7 +1,7 @@
 --
---         plaits
+--    macro oscillator p
 --
---    v 0.2.5 @okyeron
+--    v 0.3.0 @okyeron
 --
 --
 --
@@ -12,9 +12,9 @@
 --
 
 local UI = require "ui"
-local miPlaits = require "mi-eng/lib/miplaits_engine"
+local MacroP = require "mi-eng/lib/MacroP_engine"
 
-engine.name = "MiPlaits"
+engine.name = "MacroP"
 
 --		pitch=60.0, engine=0, harm=0.1, timbre=0.5, morph=0.5, trigger=0.0, level=0, fm_mod=0.0, timb_mod=0.0,
 --		morph_mod=0.0, decay=0.5, lpg_colour=0.5, mul=1.0;
@@ -25,10 +25,10 @@ engine.name = "MiPlaits"
 -- 8:swarm_engine, 9:noise_engine, 10:particle_engine, 11:string_engine, 
 -- 12:modal_engine, 13:bass_drum_engine, 14:snare_drum_engine, 15:hi_hat_engine
 
-
+local png = 1
 
 local pitch = 35.0	--(midi note)
-local eng = 7	--(0 -- 15)
+local eng = 1	--(0 -- 15)
 local harm = 0.25	--(0. -- 1.)
 local timbre = 0.5	--(0. -- 1.)
 local morph = 0.5	--(0. -- 1.)
@@ -66,7 +66,7 @@ local mo = midi.connect() -- defaults to port 1 (which is set in SYSTEM > DEVICE
 mo.event = function(data) 
   d = midi.to_msg(data)
   if d.type == "note_on" then
-    --print ("note-on: ".. d.note .. ", velocity:" .. d.vel)
+    print ("note-on: ".. d.note .. ", velocity:" .. d.vel)
     current_note = d.note
     engine.noteOn(d.note, d.vel)
     redraw()
@@ -79,7 +79,7 @@ end
 function init()
 
   -- Add params
-  miPlaits.add_params()
+  MacroP.add_params()
 
   -- initialize params  
   params:set("pitch", pitch)
@@ -95,24 +95,32 @@ function init()
   params:set("decay",decay)
   params:set("lpg_colour",lpg_colour)
   
+  message = "engine: " .. plaits_engines[params:get("engine")]
+  
   -- UI
   local row1 = 12
   local row2 = 30
   local row3 = 48
+
+  local col1 = 3
+  local col2 = 20
+  local col3 = 36
+  local col4 = 53
+  local col5 = 70
   
-  controls.pitch.ui = UI.Dial.new(5, row3, 10, 1, 1, 127, 1)
-  controls.engine.ui = UI.Dial.new(110, row3, 10, 1, 1, 15, 1)
+  controls.pitch.ui = UI.Dial.new(col1, row3, 10, 1, 1, 127, 1)
+  controls.engine.ui = UI.Dial.new(70, row3, 10, 1, 1, 16, 1)
 
-  controls.harmonics.ui = UI.Dial.new(5, row1, 10, 0, 0, 1, 0.01)
-  controls.timbre.ui = UI.Dial.new(5+18, row1, 10, 0, 0, 1, 0.01)
-  controls.timb_mod.ui = UI.Dial.new(5+(18*2), row1, 10, 0, 0, 1, 0.01)
-  controls.morph.ui = UI.Dial.new(5+(18*3), row1, 10, 0, 0, 1, 0.01)
-  controls.morph_mod.ui = UI.Dial.new(5+(18*4), row1, 10, 0, 0, 1, 0.01)
+  controls.harmonics.ui = UI.Dial.new(col1, row1, 10, 0, 0, 1, 0.01)
+  controls.timbre.ui = UI.Dial.new(col2, row1, 10, 0, 0, 1, 0.01)
+  controls.timb_mod.ui = UI.Dial.new(col3, row1, 10, 0, 0, 1, 0.01)
+  controls.morph.ui = UI.Dial.new(col4, row1, 10, 0, 0, 1, 0.01)
+  controls.morph_mod.ui = UI.Dial.new(col5, row1, 10, 0, 0, 1, 0.01)
 
-  controls.fm_mod.ui = UI.Dial.new(5, row2, 10, 0, 0, 1, 0.01)
-  controls.level.ui = UI.Dial.new(5+18, row2, 10, 0, 0, 1, 0.01)
-  controls.decay.ui = UI.Dial.new(5+(18*2), row2, 10, 0, 0, 1, 0.01)
-  controls.lpg_colour.ui = UI.Dial.new(5+(18*3), row2, 10, 0, 0, 1, 0.01)
+  controls.fm_mod.ui = UI.Dial.new(col1, row2, 10, 0, 0, 1, 0.01)
+  controls.level.ui = UI.Dial.new(col2, row2, 10, 0, 0, 1, 0.01)
+  controls.decay.ui = UI.Dial.new(col3, row2, 10, 0, 0, 1, 0.01)
+  controls.lpg_colour.ui = UI.Dial.new(col4, row2, 10, 0, 0, 1, 0.01)
 
   for k,v in pairs(controls) do
      controls[k].ui:set_value (params:get(k))
@@ -153,6 +161,7 @@ function enc(n,d)
     print("engine", string.format("%i", params:get("engine")))
     controls.engine.ui:set_value (params:get("engine"))
     message = "engine: " .. plaits_engines[params:get("engine")]
+    png = params:get("engine")
   end
   redraw()
 end
@@ -163,6 +172,7 @@ function redraw()
   screen.clear()
   screen.aa(0)
   screen.level(15)
+  screen.display_png("/home/we/dust/code/mi-eng/lib/waves/".. png .. ".png", 90, 15)
 
   screen.move(0,0)
   screen.stroke()
@@ -176,15 +186,15 @@ function redraw()
 --  end
 
 
-  screen.move(8, 8)
-  screen.text("plaits  ")
+  screen.move(2, 8)
+  screen.text("macro osc p ")
 
 
 
   screen.move(128, 8)
   screen.text_right(message)
 
-
+  -- /home/we/dust/code/mi-eng/lib/waves/1.png
   screen.update()
 end
 

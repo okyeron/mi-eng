@@ -1,7 +1,7 @@
 --
---    elements
+--    modal synth
 --
---    v 0.2.5 @okyeron
+--    v 0.3.0 @okyeron
 --
 --
 --
@@ -11,9 +11,9 @@
 --
 
 local UI = require "ui"
-local miElements = require "mi-eng/lib/mielements_engine"
+local ModalE = require "mi-eng/lib/ModalE_engine"
 
-engine.name = "MiElements"
+engine.name = "ModalE"
 
 local gate = 0 -- (open for positive input values)
 local pit = 36 -- (midi note)
@@ -90,7 +90,7 @@ end
 
 function init()
   -- Add params
-  miElements.add_params()
+  ModalE.add_params()
 
   -- initialize params  
   params:set("gate", gate)
@@ -213,7 +213,7 @@ function redraw()
   screen.move(8, 8)
   screen.font_face(1)
   screen.font_size(8)
-  screen.text("elements  ")
+  screen.text("modal synth  ")
 
   --screen.font_face(1)
   --screen.font_size(8)

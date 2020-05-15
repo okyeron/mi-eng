@@ -1,22 +1,24 @@
---- miPlaits Engine lib
+--- MacroP Engine lib
 -- Engine params and functions.
 --
--- @module miPlaits
--- @release v0.5.0
+-- @module MacroP
+-- @release v0.6.0
 -- @author Steven Noreyko @okyeron
 
 -- 
 
 local cs = require 'controlspec'
 
-local miPlaits = {}
+local MacroP = {}
 
-function miPlaits.add_params()
+function MacroP.add_params()
+
+  params:add_separator ("Macro Osc P")
+  params:add{type = "control", id = "engine", name = "engine",
+    controlspec = cs.new(1, 16, "lin", 1, 0, ""), action = engine.eng}
 
   params:add{type = "control", id = "pitch", name = "pitch",
     controlspec = cs.new(0, 127, "lin", 1, 35, ""), action = engine.pitch}
-  params:add{type = "control", id = "engine", name = "engine",
-    controlspec = cs.new(0, 15, "lin", 1, 0, ""), action = engine.eng}
   params:add{type = "control", id = "harmonics", name = "harmonics",
     controlspec = cs.new(0.00, 1.00, "lin", 0.01, 0.25, ""), action = engine.harm}
 
@@ -45,4 +47,4 @@ function miPlaits.add_params()
 
 end
 
-return miPlaits
+return MacroP

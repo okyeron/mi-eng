@@ -1,7 +1,9 @@
 # mi-eng
-mutable instruments engines for norns
+Adaptations of some popular eurorack modules for norns
 
 Based on the supercollider UGens by Volker Bohm https://github.com/v7b1/mi-UGens
+
+This is NOT a project by Mutable Instruments.
 
 Ugens can be downloaded here: https://llllllll.co/t/mi-ugens-for-norns/31781
 

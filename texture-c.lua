@@ -1,5 +1,5 @@
 --
---          cloudy
+--       fuwa fuwa
 --       --     ---
 --    ----------------
 --     --  ----  ---
@@ -11,9 +11,9 @@
 --
 
 local UI = require "ui"
-local miClouds = require "mi-eng/lib/miclouds_engine"
+local TextureC = require "mi-eng/lib/TextureC_engine"
 
-engine.name = "MiClouds"
+engine.name = "TextureC"
 
 local pitch = 0 -- (+-48.0)
 local position = 0.6 -- (0 -- 1)
@@ -36,7 +36,7 @@ local param_assign = {"pitch","position","grainsize","density","texture","drywet
 
 function init()
 -- Add params
-  miClouds.add_params()  
+  TextureC.add_params()  
 
   -- initialize params
   params:set("pitch", pitch)

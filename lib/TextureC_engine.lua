@@ -1,18 +1,20 @@
---- miClouds Engine lib
+--- TextureC Engine lib
 -- Engine params and functions.
 --
--- @module miClouds
--- @release v0.5.0
+-- @module TextureC
+-- @release v0.6.0
 -- @author Steven Noreyko @okyeron
 
 -- 
 
 local cs = require 'controlspec'
 
-local miClouds = {}
+local TextureC = {}
 
-function miClouds.add_params()
-    
+function TextureC.add_params()
+  
+  params:add_separator ("Texture Synth")
+  
   params:add{type = "control", id = "pitch", name = "pitch",
     controlspec = cs.new(-48, 48, "lin", 1, 36, ""), action = engine.pit}
   params:add{type = "control", id = "position", name = "position",
@@ -44,6 +46,6 @@ function miClouds.add_params()
 
 end
 
-return miClouds
+return TextureC
 
 

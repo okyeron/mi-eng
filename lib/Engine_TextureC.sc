@@ -1,4 +1,4 @@
-Engine_MiClouds : CroneEngine {
+Engine_TextureC : CroneEngine {
   
   var <synth;
 	
@@ -7,7 +7,7 @@ Engine_MiClouds : CroneEngine {
   }
 
   alloc {
-    SynthDef(\MiClouds, {|inL, inR, out, pit=0.7, pos=0.5, size=0.5, dens=0.5, tex=0, drywet=0.5, in_gain=1, spread=0.5, rvb=0.5, fb=0, freeze=0, mode=0, lofi=0, trig=0, mul=1.0, add=0.0|
+    SynthDef(\TextureC, {|inL, inR, out, pit=0.7, pos=0.5, size=0.5, dens=0.5, tex=0, drywet=0.5, in_gain=1, spread=0.5, rvb=0.5, fb=0, freeze=0, mode=0, lofi=0, trig=0, mul=1.0, add=0.0|
       var sound = {
         MiClouds.ar(SoundIn.ar([0,1]),
           pit, 
@@ -34,7 +34,7 @@ Engine_MiClouds : CroneEngine {
 
     context.server.sync;
 
-    synth = Synth.new(\MiClouds, [
+    synth = Synth.new(\TextureC, [
       \inL, context.in_b[0].index,			
       \inR, context.in_b[1].index,
       \out, context.out_b.index,
