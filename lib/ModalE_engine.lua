@@ -2,10 +2,13 @@
 -- Engine params and functions.
 --
 -- @module ModalE
--- @release v0.5.0
+-- @release v0.3.1
 -- @author Steven Noreyko @okyeron
-
+--
 -- 
+-- Based on the supercollider Mi-UGens by Volker Bohm <https://github.com/v7b1/mi-UGens>
+-- Based on original code by Émilie Gillet <https://github.com/pichenettes/eurorack>
+--
 
 local cs = require 'controlspec'
 

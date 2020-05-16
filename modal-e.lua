@@ -1,12 +1,18 @@
 --
 --    modal synth
 --
---    v 0.3.0 @okyeron
+--    v 0.3.2 @okyeron
 --
 --
 --
+-- E1: brightness
+-- E2: position
+-- E3: space
+-- K2: trigger note
+-- K3: gate
 --
--- Based on the supercollider UGens by Volker Bohm https://github.com/v7b1/mi-UGens
+-- Based on the supercollider Mi-UGens by Volker Bohm <https://github.com/v7b1/mi-UGens>
+-- Based on original code by Émilie Gillet <https://github.com/pichenettes/eurorack>
 --
 --
 
@@ -15,6 +21,7 @@ local ModalE = require "mi-eng/lib/ModalE_engine"
 
 engine.name = "ModalE"
 
+-- redefine defaults as needed
 local gate = 0 -- (open for positive input values)
 local pit = 36 -- (midi note)
 local strength = 0.5 --(0 -- 1)
@@ -36,59 +43,12 @@ local model = 0
 local mul = 1.0
 local add = 0
 
-local midiassignments = {"contour","bow_level","blow_level","strike_level","pit","strength","flow","mallet","geom","bright","bow_timb","blow_timb","strike_timb","damp","pos","space"}
---local midichannels = {32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47}
-
-controls = {}
-controls.contour = {ui = nil, midi = 32,}
-controls.bow_level = {ui = nil, midi = 33,}
-controls.blow_level = {ui = nil, midi = 34,}
-controls.strike_level = {ui = nil, midi = 35,}
-controls.pit = {ui = nil, midi = 36,}
-controls.strength = {ui = nil, midi = 37,}
-controls.flow = {ui = nil, midi = 38,}
-controls.mallet = {ui = nil, midi = 39,}
-controls.geom = {ui = nil, midi = 40,}
-controls.bright = {ui = nil, midi = 41,}
-controls.bow_timb = {ui = nil, midi = 42,}
-controls.blow_timb = {ui = nil, midi = 43,}
-controls.strike_timb = {ui = nil, midi = 44,}
-controls.damp = {ui = nil, midi = 45,}
-controls.pos = {ui = nil, midi = 46,}
-controls.space = {ui = nil, midi = 47,}
-
-
+local param_assign = {"contour","bow_level","blow_level","strike_level","pit","strength","flow","mallet","geom","bright","bow_timb","blow_timb","strike_timb","damp","pos","space"}
+local defualt_midich = {32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47}
 local current_note = pit
-local mo = midi.connect() -- defaults to port 1 (which is set in SYSTEM > DEVICES)
-mo.event = function(data) 
-  d = midi.to_msg(data)
-  if d.type == "note_on" then
-    --print ("note-on: ".. d.note .. ", velocity:" .. d.vel)
-    current_note = d.note
-    engine.noteOn(d.note)
-    redraw()
-  elseif d.type == "note_off" then
-    engine.noteOff(0)
-  elseif d.type == "cc" then
-    --print ("cc: ".. d.cc .. " : " .. d.val)
-    for k,v in pairs(controls) do
-        if controls[k].midi == d.cc then
-          if k == "pit" then 
-            params:set(k, d.val)
-            controls[k].ui:set_value (d.val)
-          else 
-            params:set(k, d.val/100)
-            controls[k].ui:set_value (d.val/100)
-          end
-        end 
-    end  
-
-    redraw()
-
-  end 
-end
 
 function init()
+
   -- Add params
   ModalE.add_params()
 
@@ -112,44 +72,115 @@ function init()
   params:set("model", model)
   params:set("mul", mul)
 
+  -- UI controls
+  controls = {}
+  controls.contour = {ui = nil, midi = nil,}
+  controls.bow_level = {ui = nil, midi = nil,}
+  controls.blow_level = {ui = nil, midi = nil,}
+  controls.strike_level = {ui = nil, midi = nil,}
+  controls.pit = {ui = nil, midi = nil,}
+  controls.strength = {ui = nil, midi = nil,}
+  controls.flow = {ui = nil, midi = nil,}
+  controls.mallet = {ui = nil, midi = nil,}
+  controls.geom = {ui = nil, midi = nil,}
+  controls.bright = {ui = nil, midi = nil,}
+  controls.bow_timb = {ui = nil, midi = nil,}
+  controls.blow_timb = {ui = nil, midi = nil,}
+  controls.strike_timb = {ui = nil, midi = nil,}
+  controls.damp = {ui = nil, midi = nil,}
+  controls.pos = {ui = nil, midi = nil,}
+  controls.space = {ui = nil, midi = nil,}
+
+  -- create midi pmap for 16n
+  print ("check pmap")
+  local p = norns.pmap.data.contour
+  --p = pmap.get("contour")
+  if p == nil then
+    local i = defualt_midich[1] - 1
+    for k,v in ipairs(param_assign) do
+      controls[v].midi = i + 1 
+      norns.pmap.new(v)
+      norns.pmap.assign(v,1,1,controls[v].midi) -- (id, dev, ch, cc)
+      i = i + 1 
+    end
+    print ("created default pmap")
+    norns.pmap.write()
+  else 
+    print ("already have pmap")
+    for k,v in pairs(norns.pmap.data) do
+      controls[k].midi = v.cc
+    end
+    --tab.print (controls.bright)
+  end
+
+  -- MIDI  
+  local mo = midi.connect() -- defaults to port 1 (which is set in SYSTEM > DEVICES)
+  mo.event = function(data) 
+    d = midi.to_msg(data)
+    if d.type == "note_on" then
+      --print ("note-on: ".. d.note .. ", velocity:" .. d.vel)
+      current_note = d.note
+      engine.noteOn(d.note)
+      redraw()
+    elseif d.type == "note_off" then
+      engine.noteOff(0)
+    elseif d.type == "cc" then
+      --print ("cc: ".. d.cc .. " : " .. d.val)
+      for k,v in pairs(controls) do
+          if controls[k].midi == d.cc then
+            if k == "pit" then 
+              params:set(k, d.val)
+              controls[k].ui:set_value (d.val)
+            else 
+              params:set(k, d.val/100)
+              controls[k].ui:set_value (d.val/100)
+            end
+          end 
+      end  
+      redraw()
+    end 
+  end
+  
+
   -- UI
   local row1 = 12
   local row2 = 30
   local row3 = 48
   
-  controls.contour.ui = UI.Dial.new(5, row1, 10, contour, 0, 1, 0.01)
-  controls.bow_level.ui = UI.Dial.new(5+18, row1, 10, bow_level, 0, 1, 0.01)
-  controls.blow_level.ui = UI.Dial.new(5+(18*2), row1, 10, blow_level, 0, 1, 0.01)
-  controls.strike_level.ui = UI.Dial.new(5+(18*3), row1, 10, strike_level, 0, 1, 0.01)
-  controls.pit.ui = UI.Dial.new(15+(18*4), row1, 10, pit, 0, 127, 1)
-  controls.strength.ui = UI.Dial.new(15+(18*5), row1, 10, strength, 0, 1, 0.01)
+  local offset = 18
+  local col1 = 3
+  local col2 = col1+offset
+  local col3 = col2+offset
+  local col4 = col3+offset
+  local col5 = col4+offset
+  local col6 = col5+offset
+  local col7 = col6+offset
 
-  controls.flow.ui = UI.Dial.new(15, row2, 10, flow, 0, 1, 0.01)
-  controls.mallet.ui = UI.Dial.new(15+18, row2, 10, mallet, 0, 1, 0.01)
-  controls.geom.ui = UI.Dial.new(30+(18*2), row2, 10, geom, 0, 1, 0.01)
-  controls.bright.ui = UI.Dial.new(30+(18*3), row2, 10, bright, 0, 1, 0.01)
+
+  controls.contour.ui = UI.Dial.new(col1, row1, 10, contour, 0, 1, 0.01, 0, {},"", "cont")
+  controls.bow_level.ui = UI.Dial.new(col2, row1, 10, bow_level, 0, 1, 0.01, 0, {},"", "bow")
+  controls.blow_level.ui = UI.Dial.new(col3, row1, 10, blow_level, 0, 1, 0.01, 0, {},"", "blow")
+  controls.strike_level.ui = UI.Dial.new(col4, row1, 10, strike_level, 0, 1, 0.01, 0, {},"", "strk")
+  controls.pit.ui = UI.Dial.new(col5+10, row1, 10, pit, 0, 127, 1, 0, {},"", "pit")
+  controls.strength.ui = UI.Dial.new(col6+10, row1, 10, strength, 0, 1, 0.01, 0, {},"", "strn")
+
+  controls.flow.ui = UI.Dial.new(col2+10, row2, 10, flow, 0, 1, 0.01, 0, {},"", "flow")
+  controls.mallet.ui = UI.Dial.new(col3+10, row2, 10, mallet, 0, 1, 0.01, 0, {},"", "mal")
+  controls.geom.ui = UI.Dial.new(col5, row2, 10, geom, 0, 1, 0.01, 0, {},"", "geo")
+  controls.bright.ui = UI.Dial.new(col6, row2, 10, bright, 0, 1, 0.01, 0, {},"", "brit")
   
-  controls.bow_timb.ui = UI.Dial.new(5, row3, 10, bow_timb, 0, 1, 0.01)
-  controls.blow_timb.ui = UI.Dial.new(5+18, row3, 10, blow_timb, 0, 1, 0.01)
-  controls.strike_timb.ui = UI.Dial.new(5+(18*2), row3, 10, strike_timb, 0, 1, 0.01)
-  controls.damp.ui = UI.Dial.new(5+(18*3), row3, 10, damp, 0, 1, 0.01)
-  controls.pos.ui = UI.Dial.new(5+(18*4), row3, 10, pos, 0, 1, 0.01)
-  controls.space.ui = UI.Dial.new(5+(18*5), row3, 10, space, 0, 1, 0.01)
+  controls.bow_timb.ui = UI.Dial.new(col2, row3, 10, bow_timb, 0, 1, 0.01, 0, {},"", "btm")
+  controls.blow_timb.ui = UI.Dial.new(col3, row3, 10, blow_timb, 0, 1, 0.01, 0, {},"", "bltm")
+  controls.strike_timb.ui = UI.Dial.new(col4, row3, 10, strike_timb, 0, 1, 0.01, 0, {},"", "stim")
+  controls.damp.ui = UI.Dial.new(col5, row3, 10, damp, 0, 1, 0.01, 0, {},"", "dam")
+  controls.pos.ui = UI.Dial.new(col6, row3, 10, pos, 0, 1, 0.01, 0, {},"", "pos")
+  controls.space.ui = UI.Dial.new(col7, row3, 10, space, 0, 1, 0.01, 0, {},"", "spc")
 
 
   for k,v in pairs(controls) do
      controls[k].ui:set_value (params:get(k))
   end 
-  
-  -- create midi pmap for 16n
-  if norns.pmap.data[1] == nil then
-    for k,v in pairs(controls) do
-      norns.pmap.new(k)
-      norns.pmap.assign(k,1,1,controls[k].midi) 
-    end
-    norns.pmap.write()
-  end
-  
+    
   redraw()
 end
 
@@ -188,10 +219,6 @@ function enc(n,d)
     --print("flow", string.format("%.2f", params:get("space")))
      controls.space.ui:set_value (params:get("space"))
      
-  elseif n == 4 then
-    params:delta("damp", d)
-    --print("mallet", string.format("%.2f", params:get("damp")))
-     controls.damp.ui:set_value (params:get("damp"))
   end
   redraw()
 end
@@ -210,10 +237,10 @@ function redraw()
     controls[k].ui:redraw()
   end 
 
-  screen.move(8, 8)
+  screen.move(3, 8)
   screen.font_face(1)
   screen.font_size(8)
-  screen.text("modal synth  ")
+  screen.text("modal synth ")
 
   --screen.font_face(1)
   --screen.font_size(8)

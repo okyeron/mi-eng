@@ -4,9 +4,17 @@
 --    ----------------
 --     --  ----  ---
 --      -   --    -
---    v 0.3.0 @okyeron
+--    v 0.3.2 @okyeron
 --
--- Based on the supercollider UGens by Volker Bohm https://github.com/v7b1/mi-UGens
+--
+-- E1: position
+-- E2: grainsize
+-- E3: density
+-- K2: freeze
+-- K3: trig
+--
+-- Based on the supercollider Mi-UGens by Volker Bohm <https://github.com/v7b1/mi-UGens>
+-- Based on original code by Émilie Gillet <https://github.com/pichenettes/eurorack>
 --
 --
 
@@ -32,10 +40,82 @@ local trig = 0 -- (0 -- 1)
 
 local controls = {}
 local param_assign = {"pitch","position","grainsize","density","texture","drywet","in_gain","reverb","spread","feedback","freeze","mode","lofi"}
-
+local clouds_mode = {"Granular","Stretch","Looping_Delay","Spectral"}
+local legend = ""
+local defualt_midich = 32
 
 function init()
--- Add params
+
+  -- UI controls
+  controls = {}
+  controls.pitch = {ui = nil, midi = nil,}
+  controls.position = {ui = nil, midi = nil,}
+  controls.grainsize = {ui = nil, midi = nil,}
+  controls.density = {ui = nil, midi = nil,}
+  controls.texture = {ui = nil, midi = nil,}
+  controls.drywet = {ui = nil, midi = nil,}
+  controls.in_gain = {ui = nil, midi = nil,}
+  controls.reverb = {ui = nil, midi = nil,}
+  controls.spread = {ui = nil, midi = nil,}
+  controls.feedback = {ui = nil, midi = nil,}
+  controls.freeze = {ui = nil, midi = nil,}
+  controls.mode = {ui = nil, midi = nil,}
+  controls.lofi = {ui = nil, midi = nil,}
+
+  -- create midi pmap for 16n
+  print ("check pmap")
+  local p = norns.pmap.data.pitch
+  if p == nil then
+    local i = defualt_midich - 1
+    for k,v in ipairs(param_assign) do
+      print (k,v)
+      controls[k].midi = i + 1 
+      norns.pmap.new(k)
+      norns.pmap.assign(k,1,1,controls[k].midi) -- (id, dev, ch, cc)
+      i = i + 1 
+    end
+    print ("created default pmap")
+    norns.pmap.write()
+  else 
+    print ("already have pmap")
+    for k,v in pairs(norns.pmap.data) do
+      controls[k].midi = v.cc
+    end
+    --tab.print (controls.pitch)
+  end
+
+  -- MIDI
+  -- MIDI  
+  local mo = midi.connect() -- defaults to port 1 (which is set in SYSTEM > DEVICES)
+  mo.event = function(data) 
+    d = midi.to_msg(data)
+    if d.type == "note_on" then
+      --print ("note-on: ".. d.note .. ", velocity:" .. d.vel)
+      current_note = d.note
+      params:set("pitch",d.note)
+      params:set("trig",1)
+      redraw()
+    elseif d.type == "note_off" then
+      params:set("trig",0)
+    elseif d.type == "cc" then
+      --print ("cc: ".. d.cc .. " : " .. d.val)
+      for k,v in pairs(controls) do
+          if controls[k].midi == d.cc then
+            if k == "pitch" then 
+              params:set(k, d.val)
+              controls[k].ui:set_value (d.val)
+            else 
+              params:set(k, d.val/100)
+              controls[k].ui:set_value (d.val/100)
+            end
+          end 
+      end  
+      redraw()
+    end 
+  end
+
+
+  -- Add params
   TextureC.add_params()  
 
   -- initialize params
@@ -52,17 +132,47 @@ function init()
   params:set("freeze",freeze)
   params:set("mode",mode)
   params:set("lofi",lofi)
-  
+  params:set("trig",trig)  
+
+  legend = clouds_mode[params:get("mode")+1]
 
   -- UI
-  controls[3] = UI.Dial.new(6, 4, 10, 0, 0, 1, 0.01)
-  controls[2] = UI.Dial.new(6, 48, 10, 0, 0, 1, 0.01)
-  controls[4] = UI.Dial.new(110, 48, 10, 0, 0, 1, 0.01)
-  
-  for uis = 2, 4 do
-    controls[uis]:set_value (params:get(param_assign[uis]))
-  end 
+  local row1 = 12
+  local row2 = 30
+  local row3 = 48
 
+  local offset = 19
+  local col1 = 3
+  local col2 = col1+offset
+  local col3 = col2+offset
+  local col4 = col3+offset
+  local col5 = col4+offset
+  local col6 = col5+offset
+  local col7 = col6+offset
+
+  local col8 = 116
+  
+  controls.pitch.ui = UI.Dial.new(col1, row1, 10, 0, 0, 1, 0.01, 0, {},"", "pit")
+  controls.position.ui = UI.Dial.new(col2, row1, 10, 0, 0, 1, 0.01, 0, {},"", "pos")
+  controls.grainsize.ui = UI.Dial.new(col3, row1, 10, 0, 0, 1, 0.01, 0, {},"", "size")
+  controls.density.ui = UI.Dial.new(col4, row1, 10, 0, 0, 1, 0.01, 0, {},"", "den")
+  controls.texture.ui = UI.Dial.new(col5, row1, 10, 0, 0, 1, 0.01, 0, {},"", "tex")
+
+  controls.drywet.ui = UI.Dial.new(col1, row2, 10, 0, 0, 1, 0.01, 0, {},"", "d-w")
+  controls.in_gain.ui = UI.Dial.new(col2, row2, 10, 0, 0, 1, 0.01, 0, {},"", "gain")
+  controls.reverb.ui = UI.Dial.new(col3, row2, 10, 0, 0, 1, 0.01, 0, {},"", "verb")
+  controls.spread.ui = UI.Dial.new(col4, row2, 10, 0, 0, 1, 0.01, 0, {},"", "sprd")
+  controls.feedback.ui = UI.Dial.new(col5, row2, 10, 0, 0, 1, 0.01, 0, {},"", "fb")
+
+  controls.freeze.ui = UI.Dial.new(col1, row3, 10, 0, 0, 1, 1, 0, {},"", "frz")
+  controls.lofi.ui = UI.Dial.new(col2, row3, 10, 0, 0, 1, 1, 0, {},"", "lofi")
+  controls.mode.ui = UI.Dial.new(col4+10, row3, 10, 0, 0, 3, 1, 0, {},"", "mode")
+
+  for k,v in pairs(controls) do
+     controls[k].ui:set_value (params:get(k))
+  end  
+  
+  
   redraw()
 end
 
@@ -84,16 +194,15 @@ end
 function enc(n,d)
   -- encoder actions: n = number, d = delta
   if n == 1 then
-    params:delta("grainsize", d)
-    controls[3]:set_value (params:get("grainsize"))
-    --print("grainsize", string.format("%.2f", params:get("grainsize")))
-  elseif n == 2 then
     params:delta("position", d)
-    controls[2]:set_value (params:get("position"))
+    controls.position.ui:set_value (params:get("position"))
     --print("position",string.format("%.2f", params:get("position")))
+  elseif n == 2 then
+    params:delta("grainsize", d)
+    controls.grainsize.ui:set_value (params:get("grainsize"))
   elseif n == 3 then
     params:delta("density", d)
-    controls[4]:set_value (params:get("density"))
+    controls.density.ui:set_value (params:get("density"))
     --print("density",string.format("%.2f", params:get("density")))
 --  elseif n == 4 then
 --    params:delta("drywet", d)
@@ -123,40 +232,29 @@ function redraw()
   -- screen redraw
   screen.clear()
   screen.aa(0)
+  draw_cloud(34,20,2) -- bottom
+  draw_cloud(48,-6,3) -- top
+  draw_cloud(19,9,1) -- middle
+
   screen.level(15)
 
   screen.move(0,0)
   screen.stroke()
 
-  for uis = 2, 4 do
-    controls[uis]:redraw()
-  end
+  for k,v in pairs(controls) do
+      controls[k].ui:redraw()
+  end 
 
+  screen.font_face(1)
+  screen.font_size(8)
 
-  --screen.move(8, 8)
-  --screen.text("wet:  ")
-  --screen.move(120, 8)
-  --screen.text_right(string.format("%.2f", params:get("drywet")))
+  screen.move(3, 8)
 
-  screen.move(21, 12)
-  screen.text("size")
-  --screen.move(120, 48)
-  --screen.text_right(string.format("%.2f", params:get("grainsize")))
-  screen.move(21, 62)
-  screen.text("pos")
-  --screen.move(120, 54)
-  --screen.text_right(string.format("%.2f", params:get("position")))
-  screen.move(85, 62)
-  screen.text("dens")
-  --screen.move(120, 60)
-  --screen.text_right(string.format("%.2f", params:get("density")))
+  screen.text("texture-c")
 
-  
-  draw_cloud(-16,0,1)
-  draw_cloud(32,-1,2)
-  draw_cloud(2,12,4)
+  screen.move(128, 63)
+  screen.text_right(legend)
 
-  
   screen.update()
 end
 

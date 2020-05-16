@@ -1,7 +1,7 @@
 --
 --    macro oscillator b
 --
---    v 0.3.0 @okyeron
+--    v 0.3.2 @okyeron
 --
 --
 -- E1: model
@@ -9,7 +9,8 @@
 -- E3: color
 -- K2: trigger note
 --
--- Based on the supercollider UGens by Volker Bohm https://github.com/v7b1/mi-UGens
+-- Based on the supercollider Mi-UGens by Volker Bohm <https://github.com/v7b1/mi-UGens>
+-- Based on original code by Émilie Gillet <https://github.com/pichenettes/eurorack>
 --
 --
 
@@ -30,6 +31,8 @@ engine.name = "MacroB"
 
 local message = ""
 local glyph = ""
+local defualt_midich = 32
+local metarandom_cc = 47
 
 local pitch=60 --(midi note)
 local timbre=0.5
@@ -50,29 +53,52 @@ local ampRel=1.0
 local current_note = pitch
 local metarandom = false
 
-local param_assign = {"pitch","timbre","color","model","resamp","decim","bits","ws", "ampAtk", "ampDec", "ampSus", "ampRel"}
-
+local param_assign = {"timbre","color","decim","bits","ws","pitch","resamp","model", "ampAtk", "ampDec", "ampSus", "ampRel"}
 local braids_engines = {"CSAW","Morph","Saw Square","Sine Triangle","Buzz","Square Sub","Saw Sub","Square Sync","Saw Sync","Triple Saw","Triple Square","Triple Triangle","Triple Sine","Triple Ring Mod","Saw Swarm","Saw Comb","Toy","Digital Filter Lp","Digital Filter Pk","Digital Filter Bp","Digital Filter Hp","Vosim","Vowel","Vowel Fof","Harmonics","Fm","Feedback Fm","Chaotic Feedback Fm","Plucked","Bowed","Blown","Fluted","Struck Bell","Struck Drum","Kick","Cymbal","Snare","Wavetables","Wave Map","Wave Line","Wave Paraphonic","Filtered Noise","Twin Peaks Noise","Clocked Noise","Granular Cloud","Particle Noise","Digital Modulation","Question Mark"}
-
 local braids_glyphs = {"CSAW","/\\/|-_-_","/|/|-_-_","FOLD","_|_|_|_|_","-_-_SUB","/|/|SUB","SYN-_-_","SYN/|","/|/|x3","-_-_x3","/\\x3","SIx3","RING","/|/|/|/|","/|/|_|_|_","TOY*","ZLPF","ZPKF","ZBPF","ZHPF","VOSM","VOWL","VFOF","HARM","FM","FBFM","WTFM","PLUK","BOWD","BLOW","FLUTE","BELL","DRUM","KICK","CYMB","SNAR","WTBL","WMAP","WLIN","WTx4","NOIS","TWNQ","CLKN","CLOU","PRTC","QPSK","????"}
-
-controls = {}
-controls.pitch = {ui = nil, midi = 32,}
-controls.timbre = {ui = nil, midi = 33,}
-controls.color = {ui = nil, midi = 34,}
-controls.model = {ui = nil, midi = 35,}
-controls.decim = {ui = nil, midi = 36,}
-controls.bits = {ui = nil, midi = 37,}
-controls.ws = {ui = nil, midi = 38,}
---controls.resamp = {ui = nil, midi = 39,}
-
-controls.ampAtk = {ui = nil, midi = 44,}
-controls.ampDec = {ui = nil, midi = 45,}
-controls.ampSus = {ui = nil, midi = 46,}
-controls.ampRel = {ui = nil, midi = 47,}
-
 local current_note = pitch
 
+function init()
+
+  controls = {}
+  controls.pitch = {ui = nil, midi = nil,}
+  controls.timbre = {ui = nil, midi = nil,}
+  controls.color = {ui = nil, midi = nil,}
+  controls.model = {ui = nil, midi = nil,}
+  controls.decim = {ui = nil, midi = nil,}
+  controls.bits = {ui = nil, midi = nil,}
+  controls.ws = {ui = nil, midi = nil,}
+  controls.resamp = {ui = nil, midi = nil,}
+
+  controls.ampAtk = {ui = nil, midi = nil,}
+  controls.ampDec = {ui = nil, midi = nil,}
+  controls.ampSus = {ui = nil, midi = nil,}
+  controls.ampRel = {ui = nil, midi = nil,}
+
+
+  -- create midi pmap for 16n
+  print ("check pmap")
+  local p = norns.pmap.data.contour
+  --p = pmap.get("contour")
+  if p == nil then
+    local i = defualt_midich - 1
+    for k,v in ipairs(param_assign) do
+      controls[v].midi = i + 1 
+      norns.pmap.new(v)
+      norns.pmap.assign(v,1,1,controls[v].midi) -- (id, dev, ch, cc)
+      i = i + 1 
+    end
+    print ("created default pmap")
+    norns.pmap.write()
+  else 
+    print ("already have pmap")
+    for k,v in pairs(norns.pmap.data) do
+      controls[k].midi = v.cc
+    end
+    --tab.print (controls.bright)
+  end
+
+-- MIDI
 local mo = midi.connect() -- defaults to port 1 (which is set in SYSTEM > DEVICES)
 mo.event = function(data) 
   d = midi.to_msg(data)
@@ -89,13 +115,9 @@ mo.event = function(data)
   elseif d.type == "note_off" then
     engine.noteOff(0)
   end 
-end
-local mo2 = midi.connect(2) -- defaults to port 1 (which is set in SYSTEM > DEVICES)
-mo2.event = function(data) 
-  d = midi.to_msg(data)
   if d.type == "cc" then
     for k,v in pairs(controls) do
-        if d.cc == 40 and d.val > 64 then
+        if d.cc == metarandom_cc and d.val > 64 then
           metarandom = true
         else
           metarandom = false
@@ -108,7 +130,7 @@ mo2.event = function(data)
           elseif k == "model" then 
             controls[k].ui:set_value (d.val)
             params:set(k, d.val)
-            legend = "" .. braids_engines[params:get(k)]
+            legend = braids_engines[params:get(k)]
             glyph = braids_glyphs[params:get(k)]
           elseif k == "decim" then
             params:set(k, d.val/4)
@@ -122,13 +144,10 @@ mo2.event = function(data)
           end
        end 
     end  
-    --params:bang ()
-    redraw()
-    
+    redraw()    
   end 
 end
 
-function init()
 
   -- Add params
   MacroB.add_params()
@@ -149,25 +168,31 @@ function init()
   params:set("ampSus",ampSus)
   params:set("ampRel",ampRel)
 
-  legend = "" .. braids_engines[params:get("model")]
-  glyph = "" .. braids_glyphs[params:get("model")]
+  legend = braids_engines[params:get("model")]
+  glyph = braids_glyphs[params:get("model")]
  
   -- UI
-  local row1 = 12
-  local row2 = 30
-  local row3 = 48
+  local row1 = 11
+  local row2 = 29
+  local row3 = 47
 
+  local offset = 18
   local col1 = 3
-  local col2 = 22
-  local col3 = 40
-  local col4 = 52
-  local col5 = 68
-  local col6 = 84
-  local col7 = 100
-  local col8 = 116
+  local col2 = col1+offset
+  local col3 = col2+offset
+  local col4 = col3+offset
+  local col5 = 50+offset
+  local col6 = col5+offset-2
+  local col7 = col6+offset-2
+  local col8 = col7+offset-2
+
+--  local col5 = 68
+--  local col6 = 84
+--  local col7 = 100
+--  local col8 = 116
   
-  controls.pitch.ui = UI.Dial.new(col1, row3, 10, 1, 1, 127, 1)
-  controls.model.ui = UI.Dial.new(114, row3-8, 14, 1, 1, #braids_engines, 1)
+  controls.pitch.ui = UI.Dial.new(col1, row3, 10, 1, 1, 127, 1, 0, {},"", "pit")
+  controls.model.ui = UI.Dial.new(114, row3-8, 14, 1, 1, #braids_engines, 1, 0, {},"", "eng")
 
   controls.timbre.ui = UI.Dial.new(col1, row1, 10, 0, 0, 1, 0.01, 0, {},"", "timb")
   controls.color.ui = UI.Dial.new(col2, row1, 10, 0, 0, 1, 0.01, 0, {},"", "color")
@@ -176,6 +201,7 @@ function init()
   controls.decim.ui = UI.Dial.new(col1, row2, 10, 1, 1, 32, 1, 0, {},"", "dec")
   controls.bits.ui = UI.Dial.new(col2, row2, 10, 1, 1, 7, 1, 0, {},"", "bits")
   controls.ws.ui = UI.Dial.new(col3, row2, 10, 0, 0, 1, 0.01, 0, {},"", "ws")
+  controls.resamp.ui = UI.Dial.new(col2, row3, 10, 0, 0, 1, 0.01, 0, {},"", "rsmp")
 
   controls.ampAtk.ui = UI.Dial.new(col5, row1, 10, 0, 0, 1, 0.01, 0, {},"", "a")
   controls.ampDec.ui = UI.Dial.new(col6, row1, 10, 0, 0, 1, 0.01, 0, {},"", "d")
@@ -212,12 +238,12 @@ function enc(n,d)
     params:delta("timbre", d)
     --print("timbre", string.format("%.2f", params:get("timbre")))
     controls.timbre.ui:set_value (params:get("timbre"))
-    message = "timbre"
+    --message = "timbre"
   elseif n == 3 then
     params:delta("color", d)
     --print("color", string.format("%.2f", params:get("color")))
     controls.color.ui:set_value (params:get("color"))
-    message = "color"
+    --message = "color"
   end
   redraw()
 end
@@ -250,7 +276,9 @@ function redraw()
   screen.text("macro osc b ")
 
   screen.move(128, 8)
-  --screen.text_right(message)
+  if metarandom then
+    screen.text_right("meta mode")
+  end 
 
 
   screen.move(110, 62)

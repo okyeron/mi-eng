@@ -1,9 +1,17 @@
 --
 --    ResonateR
 --
---    v 0.3.0 @okyeron
+--    v 0.3.2 @okyeron
 --
--- Based on the supercollider UGens by Volker Bohm https://github.com/v7b1/mi-UGens
+--
+-- E1: structure
+-- E2: brightness
+-- E3: position
+-- K2: bypass
+-- K3: trig
+--
+-- Based on the supercollider Mi-UGens by Volker Bohm <https://github.com/v7b1/mi-UGens>
+-- Based on original code by Émilie Gillet <https://github.com/pichenettes/eurorack>
 --
 --
 
@@ -30,69 +38,97 @@ local current_note = pitch
 -- 		arg in=0, trig=0, pit=60.0, struct=0.25, bright=0.5, damp=0.7, pos=0.25, model=0, poly=1,
 --		intern_exciter=0, easteregg=0, bypass=0, mul=1.0, add=0;
 
-controls = {}
-controls.pitch = {ui = nil, midi = 32,}
-controls.structure = {ui = nil, midi = 33,}
-controls.brightness = {ui = nil, midi = 34,}
-controls.damping = {ui = nil, midi = 35,}
-controls.position = {ui = nil, midi = 36,}
-controls.model = {ui = nil, midi = 37,}
-controls.polyphony = {ui = nil, midi = 38,}
-controls.intern_exciter = {ui = nil, midi = 39,}
-controls.bypass = {ui = nil, midi = 40,}
-controls.easteregg = {ui = nil, midi = 41,}
 
-
+local param_assign = {"pitch","structure","brightness","damping","position","model","polyphony","intern_exciter","bypass","easteregg"}
 local rings_models = {"Modal Resonator","Sympathetic String","Mod/Inharm String","2-Op Fm Voice","Sympth Str Quant","String And Reverb"}
 local rings_egg_models = {"FX Formant","FX Chorus","FX Reverb","FX Formant","FX Ensemble","FX Reverb"}
 
 local current_note = pitch
-local mo = midi.connect() -- defaults to port 1 (which is set in SYSTEM > DEVICES)
-mo.event = function(data) 
-  d = midi.to_msg(data)
-  if d.type == "note_on" then
-    --print ("note-on: ".. d.note .. ", velocity:" .. d.vel)
-    current_note = d.note
-    params:set("pitch", d.note)
-    controls.pitch.ui:set_value (d.note)
-    engine.noteOn(d.note)
-    redraw()
-  elseif d.type == "note_off" then
-    engine.noteOff(0)
-  end 
-end
-local mo2 = midi.connect(2) -- defaults to port 1 (which is set in SYSTEM > DEVICES)
-mo2.event = function(data) 
-  d = midi.to_msg(data)
-  if d.type == "cc" then
-    for k,v in pairs(controls) do
-        if d.cc == 40 and d.val > 64 then
-          metarandom = true
-        else
-          metarandom = false
-        end 
-        if controls[k].midi == d.cc then
-          --print ("cc: ".. d.cc .. ", val:" .. d.val)
-          if k == "pitch" then
-            controls[k].ui:set_value (d.val)
-            params:set(k, d.val)
-          elseif k == "model" then
-            controls[k].ui:set_value (d.val)
-            params:set(k, d.val)
-            legend = rings_models[params:get(k)+1]
-          elseif k ~= nil then
-            params:set(k, d.val/100)
-            controls[k].ui:set_value (d.val/100)
-          end
-       end
-    end  
-    redraw()
-
-  end 
-end
-
+local defualt_midich = 32
 
 function init()
+  -- UI controls
+  controls = {}
+  controls.pitch = {ui = nil, midi = nil,}
+  controls.structure = {ui = nil, midi = nil,}
+  controls.brightness = {ui = nil, midi = nil,}
+  controls.damping = {ui = nil, midi = nil,}
+  controls.position = {ui = nil, midi = nil,}
+  controls.model = {ui = nil, midi = nil,}
+  controls.polyphony = {ui = nil, midi = nil,}
+  controls.intern_exciter = {ui = nil, midi = nil,}
+  controls.bypass = {ui = nil, midi = nil,}
+  controls.easteregg = {ui = nil, midi = nil,}
+
+  -- create midi pmap for 16n
+  print ("check pmap")
+  local p = norns.pmap.data.pitch
+
+  if p == nil then
+    local i = defualt_midich - 1
+    for k,v in ipairs(param_assign) do
+      controls[k].midi = i + 1 
+      norns.pmap.new(k)
+      norns.pmap.assign(k,1,1,controls[k].midi) -- (id, dev, ch, cc)
+      i = i + 1 
+    end
+    print ("created default pmap")
+    norns.pmap.write()
+  else 
+    print ("already have pmap")
+    for k,v in pairs(norns.pmap.data) do
+      controls[k].midi = v.cc
+    end
+    tab.print (controls.pitch)
+  end
+
+
+  -- MIDI
+  local mo = midi.connect() -- defaults to port 1 (which is set in SYSTEM > DEVICES)
+  mo.event = function(data) 
+    d = midi.to_msg(data)
+    if d.type == "note_on" then
+      --print ("note-on: ".. d.note .. ", velocity:" .. d.vel)
+      current_note = d.note
+      params:set("pitch", d.note)
+      controls.pitch.ui:set_value (d.note)
+      engine.noteOn(d.note)
+      redraw()
+    elseif d.type == "note_off" then
+      engine.noteOff(0)
+    end 
+  end
+  -- controller on device 2
+  local mo2 = midi.connect(2) -- defaults to port 1 (which is set in SYSTEM > DEVICES)
+  mo2.event = function(data) 
+    d = midi.to_msg(data)
+    if d.type == "cc" then
+      for k,v in pairs(controls) do
+          if d.cc == 40 and d.val > 64 then
+            metarandom = true
+          else
+            metarandom = false
+          end 
+          if controls[k].midi == d.cc then
+            --print ("cc: ".. d.cc .. ", val:" .. d.val)
+            if k == "pitch" then
+              controls[k].ui:set_value (d.val)
+              params:set(k, d.val)
+            elseif k == "model" then
+              controls[k].ui:set_value (d.val)
+              params:set(k, d.val)
+              legend = rings_models[params:get(k)+1]
+            elseif k ~= nil then
+              params:set(k, d.val/100)
+              controls[k].ui:set_value (d.val/100)
+            end
+         end
+      end  
+      redraw()
+
+    end 
+  end
+
   -- Add params
   ResonateR.add_params()
 
@@ -116,12 +152,14 @@ function init()
   local row2 = 22
   local row3 = 47
 
+  local offset = 20
   local col1 = 5
-  local col2 = 25
-  local col3 = 45
-  local col4 = 65
-  local col5 = 85
-  local col6 = 102
+  local col2 = col1+offset
+  local col3 = col2+offset
+  local col4 = col3+offset
+  local col5 = col4+offset
+  local col6 = col5+offset
+  local col7 = col6+offset
 
   local col8 = 116
   
@@ -179,7 +217,6 @@ function enc(n,d)
     params:delta("position", d)
     controls.position.ui:set_value (params:get("position"))
     --print("position", string.format("%.2f", params:get("position")))
-
   end
   redraw()
 end

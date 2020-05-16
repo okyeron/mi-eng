@@ -1,13 +1,17 @@
 --
 --    macro oscillator p
 --
---    v 0.3.0 @okyeron
+--    v 0.3.2 @okyeron
 --
 --
 --
+-- E1: harmonics
+-- E2: timbre
+-- E3: morph
+-- K2: trigger note
 --
---
--- Based on the supercollider UGens by Volker Bohm https://github.com/v7b1/mi-UGens
+-- Based on the supercollider Mi-UGens by Volker Bohm <https://github.com/v7b1/mi-UGens>
+-- Based on original code by Émilie Gillet <https://github.com/pichenettes/eurorack>
 --
 --
 
@@ -25,7 +29,6 @@ engine.name = "MacroP"
 -- 8:swarm_engine, 9:noise_engine, 10:particle_engine, 11:string_engine, 
 -- 12:modal_engine, 13:bass_drum_engine, 14:snare_drum_engine, 15:hi_hat_engine
 
-local png = 1
 
 local pitch = 35.0	--(midi note)
 local eng = 1	--(0 -- 15)
@@ -42,41 +45,87 @@ local lpg_colour = 0	--(0. -- 1.)
 --local mul	= 0.25 -- (output gain)
 
 local param_assign = {"pitch","engine","harmonics","timbre","timb_mod","morph","morph_mod","fm_mod","level","decay","lpg_colour","trigger"}
-
 local plaits_engines = {"virtual analog","waveshaping","fm","grain","additive","wavetable","chord","speech","swarm","noise","particle","string","modal","bass drum","snare drum","hi hat"}
 
-controls = {}
-controls.pitch = {}
-controls.engine = {}
-controls.harmonics = {}
-controls.timbre = {}
-controls.timb_mod = {}
-controls.morph = {}
-controls.morph_mod = {}
-controls.fm_mod = {}
-controls.level = {}
-controls.decay = {}
-controls.lpg_colour = {}
-
-
-local message = ""
-
+local png = 1
+local legend = ""
 local current_note = pitch
-local mo = midi.connect() -- defaults to port 1 (which is set in SYSTEM > DEVICES)
-mo.event = function(data) 
-  d = midi.to_msg(data)
-  if d.type == "note_on" then
-    print ("note-on: ".. d.note .. ", velocity:" .. d.vel)
-    current_note = d.note
-    engine.noteOn(d.note, d.vel)
-    redraw()
-  elseif d.type == "note_off" then
-    engine.noteOff(0)
-  end 
-  
-end
+local defualt_midich = 32
 
 function init()
+
+  controls = {}
+  controls.pitch = {ui = nil, midi = nil,}
+  controls.engine = {ui = nil, midi = nil,}
+  controls.harmonics = {ui = nil, midi = nil,}
+  controls.timbre = {ui = nil, midi = nil,}
+  controls.timb_mod = {ui = nil, midi = nil,}
+  controls.morph = {ui = nil, midi = nil,}
+  controls.morph_mod = {ui = nil, midi = nil,}
+  controls.fm_mod = {ui = nil, midi = nil,}
+  controls.level = {ui = nil, midi = nil,}
+  controls.decay = {ui = nil, midi = nil,}
+  controls.lpg_colour = {ui = nil, midi = nil,}
+
+  -- create midi pmap for 16n
+  print ("check pmap")
+  local p = norns.pmap.data.engine
+  --p = pmap.get("contour")
+  if p == nil then
+    local i = defualt_midich-1
+    for k,v in ipairs(param_assign) do
+      controls[k].midi = i + 1 
+      norns.pmap.new(k)
+      norns.pmap.assign(k,1,1,controls[k].midi) -- (id, dev, ch, cc)
+      i = i + 1     
+    end
+    print ("created default pmap")
+    norns.pmap.write()
+  else 
+    print ("already have pmap")
+    for k,v in pairs(norns.pmap.data) do
+      controls[k].midi = v.cc
+    end
+    tab.print (controls.engine)
+  end
+
+  
+  local mo = midi.connect() -- defaults to port 1 (which is set in SYSTEM > DEVICES)
+  mo.event = function(data) 
+    d = midi.to_msg(data)
+    if d.type == "note_on" then
+      print ("note-on: ".. d.note .. ", velocity:" .. d.vel)
+      current_note = d.note
+      engine.noteOn(d.note, d.vel)
+      redraw()
+    elseif d.type == "note_off" then
+      engine.noteOff(0)
+    end 
+    -- ccs
+    if d.type == "cc" then
+      for k,v in pairs(controls) do
+          if controls[k].midi == d.cc then
+            --print ("cc: ".. d.cc .. ", val:" .. d.val)
+            if k == "pitch" then
+              controls[k].ui:set_value (d.val)
+              params:set(k, d.val)
+            elseif k == "engine" then 
+              controls[k].ui:set_value (d.val)
+              params:set(k, d.val)
+              legend = plaits_engines[params:get("engine")]
+              png = params:get("engine")
+            elseif k ~= nil then
+              params:set(k, d.val/100)
+              controls[k].ui:set_value (d.val/100)
+            end
+         end 
+      end  
+      redraw()    
+    end 
+
+  end
+
+  
 
   -- Add params
   MacroP.add_params()
@@ -95,32 +144,35 @@ function init()
   params:set("decay",decay)
   params:set("lpg_colour",lpg_colour)
   
-  message = "engine: " .. plaits_engines[params:get("engine")]
+  legend = plaits_engines[params:get("engine")]
   
   -- UI
-  local row1 = 12
-  local row2 = 30
-  local row3 = 48
+  local row1 = 11
+  local row2 = 29
+  local row3 = 47
 
-  local col1 = 3
-  local col2 = 20
-  local col3 = 36
-  local col4 = 53
-  local col5 = 70
+  local offset = 19
+  local col1 = 4
+  local col2 = col1+offset
+  local col3 = col2+offset
+  local col4 = col3+offset
+  local col5 = col4+offset
+  local col6 = col5+offset
+  local col7 = col6+offset-3
   
-  controls.pitch.ui = UI.Dial.new(col1, row3, 10, 1, 1, 127, 1)
-  controls.engine.ui = UI.Dial.new(70, row3, 10, 1, 1, 16, 1)
+  controls.pitch.ui = UI.Dial.new(col1, row3, 10, 1, 1, 127, 1, 0, {},"", "pit")
+  controls.engine.ui = UI.Dial.new(col7, row1, 10, 1, 1, 16, 1, 0, {},"", "eng")
 
-  controls.harmonics.ui = UI.Dial.new(col1, row1, 10, 0, 0, 1, 0.01)
-  controls.timbre.ui = UI.Dial.new(col2, row1, 10, 0, 0, 1, 0.01)
-  controls.timb_mod.ui = UI.Dial.new(col3, row1, 10, 0, 0, 1, 0.01)
-  controls.morph.ui = UI.Dial.new(col4, row1, 10, 0, 0, 1, 0.01)
-  controls.morph_mod.ui = UI.Dial.new(col5, row1, 10, 0, 0, 1, 0.01)
+  controls.harmonics.ui = UI.Dial.new(col1, row1, 10, 0, 0, 1, 0.01, 0, {},"", "harm")
+  controls.timbre.ui = UI.Dial.new(col2, row1, 10, 0, 0, 1, 0.01, 0, {},"", "timb")
+  controls.timb_mod.ui = UI.Dial.new(col3, row1, 10, 0, 0, 1, 0.01, 0, {},"", "tmod")
+  controls.morph.ui = UI.Dial.new(col4, row1, 10, 0, 0, 1, 0.01, 0, {},"", "mrf")
+  controls.morph_mod.ui = UI.Dial.new(col5, row1, 10, 0, 0, 1, 0.01, 0, {},"", "mmod")
 
-  controls.fm_mod.ui = UI.Dial.new(col1, row2, 10, 0, 0, 1, 0.01)
-  controls.level.ui = UI.Dial.new(col2, row2, 10, 0, 0, 1, 0.01)
-  controls.decay.ui = UI.Dial.new(col3, row2, 10, 0, 0, 1, 0.01)
-  controls.lpg_colour.ui = UI.Dial.new(col4, row2, 10, 0, 0, 1, 0.01)
+  controls.fm_mod.ui = UI.Dial.new(col1, row2, 10, 0, 0, 1, 0.01, 0, {},"", "fmod")
+  controls.level.ui = UI.Dial.new(col2, row2, 10, 0, 0, 1, 0.01, 0, {},"", "lev")
+  controls.decay.ui = UI.Dial.new(col3, row2, 10, 0, 0, 1, 0.01, 0, {},"", "dec")
+  controls.lpg_colour.ui = UI.Dial.new(col4, row2, 10, 0, 0, 1, 0.01, 0, {},"", "lpgc")
 
   for k,v in pairs(controls) do
      controls[k].ui:set_value (params:get(k))
@@ -143,24 +195,24 @@ function enc(n,d)
   -- encoder actions: n = number, d = delta
   if n == 1 then
     params:delta("harmonics", d)
-    print("harmonics", string.format("%.2f", params:get("harmonics")))
+    --print("harmonics", string.format("%.2f", params:get("harmonics")))
     controls.harmonics.ui:set_value (params:get("harmonics"))
-    message = "harmonics"
+    --message = "harmonics"
   elseif n == 2 then
     params:delta("timbre", d)
-    print("timbre", string.format("%.2f", params:get("timbre")))
+    --print("timbre", string.format("%.2f", params:get("timbre")))
     controls.timbre.ui:set_value (params:get("timbre"))
-    message = "timbre"
+    --message = "timbre"
   elseif n == 3 then
     params:delta("morph", d)
-    print("morph", string.format("%.2f", params:get("morph")))
+    --print("morph", string.format("%.2f", params:get("morph")))
     controls.morph.ui:set_value (params:get("morph"))
-    message = "morph"
+    --message = "morph"
   elseif n == 4 then
     params:delta("engine", d)
-    print("engine", string.format("%i", params:get("engine")))
+    --print("engine", string.format("%i", params:get("engine")))
     controls.engine.ui:set_value (params:get("engine"))
-    message = "engine: " .. plaits_engines[params:get("engine")]
+    legend = plaits_engines[params:get("engine")]
     png = params:get("engine")
   end
   redraw()
@@ -172,10 +224,12 @@ function redraw()
   screen.clear()
   screen.aa(0)
   screen.level(15)
-  screen.display_png("/home/we/dust/code/mi-eng/lib/waves/".. png .. ".png", 90, 15)
+  screen.display_png("/home/we/dust/code/mi-eng/lib/waves/".. png .. ".png", 92, 30)
 
   screen.move(0,0)
   screen.stroke()
+  screen.font_face (1)
+  screen.font_size (8)
 
   for k,v in pairs(controls) do
       controls[k].ui:redraw()
@@ -185,14 +239,15 @@ function redraw()
     --controls[uis][1]:redraw()
 --  end
 
-
   screen.move(2, 8)
-  screen.text("macro osc p ")
+  screen.text("macro osc p")
 
 
+  screen.move(94, 62)
+  screen.text_right(legend)
 
-  screen.move(128, 8)
-  screen.text_right(message)
+  --screen.move(128, 8)
+  --screen.text_right(message)
 
   -- /home/we/dust/code/mi-eng/lib/waves/1.png
   screen.update()
