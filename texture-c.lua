@@ -4,7 +4,7 @@
 --    ----------------
 --     --  ----  ---
 --      -   --    -
---    v 0.3.2 @okyeron
+--    v 0.3.3 @okyeron
 --
 --
 -- E1: position
@@ -42,9 +42,30 @@ local controls = {}
 local param_assign = {"pitch","position","grainsize","density","texture","drywet","in_gain","reverb","spread","feedback","freeze","mode","lofi"}
 local clouds_mode = {"Granular","Stretch","Looping_Delay","Spectral"}
 local legend = ""
-local defualt_midich = 32
+local defualt_midicc = 32
 
 function init()
+
+  -- Add params
+  TextureC.add_params()  
+
+  -- initialize params
+  params:set("pitch", pitch)
+  params:set("position",position)
+  params:set("grainsize",size)
+  params:set("density",dens)
+  params:set("texture",texture)
+  params:set("drywet",drywet)
+  params:set("in_gain",in_gain)
+  params:set("reverb",rvb)
+  params:set("spread",spread)
+  params:set("feedback",feedback)
+  params:set("freeze",freeze)
+  params:set("mode",mode)
+  params:set("lofi",lofi)
+  params:set("trig",trig)  
+
+  legend = clouds_mode[params:get("mode")+1]
 
   -- UI controls
   controls = {}
@@ -66,12 +87,11 @@ function init()
   print ("check pmap")
   local p = norns.pmap.data.pitch
   if p == nil then
-    local i = defualt_midich - 1
+    local i = defualt_midicc - 1
     for k,v in ipairs(param_assign) do
-      print (k,v)
-      controls[k].midi = i + 1 
-      norns.pmap.new(k)
-      norns.pmap.assign(k,1,1,controls[k].midi) -- (id, dev, ch, cc)
+      controls[v].midi = i + 1 
+      norns.pmap.new(v)
+      norns.pmap.assign(v,1,1,controls[v].midi) -- (id, dev, ch, cc)
       i = i + 1 
     end
     print ("created default pmap")
@@ -85,7 +105,6 @@ function init()
   end
 
   -- MIDI
-  -- MIDI  
   local mo = midi.connect() -- defaults to port 1 (which is set in SYSTEM > DEVICES)
   mo.event = function(data) 
     d = midi.to_msg(data)
@@ -115,26 +134,6 @@ function init()
   end
 
 
-  -- Add params
-  TextureC.add_params()  
-
-  -- initialize params
-  params:set("pitch", pitch)
-  params:set("position",position)
-  params:set("grainsize",size)
-  params:set("density",dens)
-  params:set("texture",texture)
-  params:set("drywet",drywet)
-  params:set("in_gain",in_gain)
-  params:set("reverb",rvb)
-  params:set("spread",spread)
-  params:set("feedback",feedback)
-  params:set("freeze",freeze)
-  params:set("mode",mode)
-  params:set("lofi",lofi)
-  params:set("trig",trig)  
-
-  legend = clouds_mode[params:get("mode")+1]
 
   -- UI
   local row1 = 12

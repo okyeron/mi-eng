@@ -1,7 +1,7 @@
 --
 --    modal synth
 --
---    v 0.3.2 @okyeron
+--    v 0.3.3 @okyeron
 --
 --
 --
@@ -45,6 +45,7 @@ local add = 0
 
 local param_assign = {"contour","bow_level","blow_level","strike_level","pit","strength","flow","mallet","geom","bright","bow_timb","blow_timb","strike_timb","damp","pos","space"}
 local defualt_midich = {32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47}
+local defualt_midicc = 32
 local current_note = pit
 
 function init()
@@ -96,7 +97,7 @@ function init()
   local p = norns.pmap.data.contour
   --p = pmap.get("contour")
   if p == nil then
-    local i = defualt_midich[1] - 1
+    local i = defualt_midicc - 1
     for k,v in ipairs(param_assign) do
       controls[v].midi = i + 1 
       norns.pmap.new(v)

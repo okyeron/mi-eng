@@ -1,7 +1,7 @@
 --
 --    ResonateR
 --
---    v 0.3.2 @okyeron
+--    v 0.3.3 @okyeron
 --
 --
 -- E1: structure
@@ -44,7 +44,7 @@ local rings_models = {"Modal Resonator","Sympathetic String","Mod/Inharm String"
 local rings_egg_models = {"FX Formant","FX Chorus","FX Reverb","FX Formant","FX Ensemble","FX Reverb"}
 
 local current_note = pitch
-local defualt_midich = 32
+local defualt_midicc = 32
 
 function init()
   -- UI controls
@@ -65,11 +65,11 @@ function init()
   local p = norns.pmap.data.pitch
 
   if p == nil then
-    local i = defualt_midich - 1
+    local i = defualt_midicc - 1
     for k,v in ipairs(param_assign) do
-      controls[k].midi = i + 1 
-      norns.pmap.new(k)
-      norns.pmap.assign(k,1,1,controls[k].midi) -- (id, dev, ch, cc)
+      controls[v].midi = i + 1 
+      norns.pmap.new(v)
+      norns.pmap.assign(v,1,1,controls[v].midi) -- (id, dev, ch, cc)
       i = i + 1 
     end
     print ("created default pmap")
@@ -79,7 +79,7 @@ function init()
     for k,v in pairs(norns.pmap.data) do
       controls[k].midi = v.cc
     end
-    tab.print (controls.pitch)
+    --tab.print (controls.pitch)
   end
 
 

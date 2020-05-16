@@ -1,7 +1,7 @@
 --
 --    macro oscillator p
 --
---    v 0.3.2 @okyeron
+--    v 0.3.3 @okyeron
 --
 --
 --
@@ -29,6 +29,7 @@ engine.name = "MacroP"
 -- 8:swarm_engine, 9:noise_engine, 10:particle_engine, 11:string_engine, 
 -- 12:modal_engine, 13:bass_drum_engine, 14:snare_drum_engine, 15:hi_hat_engine
 
+local defualt_midicc = 32
 
 local pitch = 35.0	--(midi note)
 local eng = 1	--(0 -- 15)
@@ -44,13 +45,12 @@ local decay = 0 	--(0. -- 1.)
 local lpg_colour = 0	--(0. -- 1.)
 --local mul	= 0.25 -- (output gain)
 
-local param_assign = {"pitch","engine","harmonics","timbre","timb_mod","morph","morph_mod","fm_mod","level","decay","lpg_colour","trigger"}
+local param_assign = {"pitch","engine","harmonics","timbre","timb_mod","morph","morph_mod","fm_mod","level","decay","lpg_colour"}
 local plaits_engines = {"virtual analog","waveshaping","fm","grain","additive","wavetable","chord","speech","swarm","noise","particle","string","modal","bass drum","snare drum","hi hat"}
 
 local png = 1
 local legend = ""
 local current_note = pitch
-local defualt_midich = 32
 
 function init()
 
@@ -72,12 +72,12 @@ function init()
   local p = norns.pmap.data.engine
   --p = pmap.get("contour")
   if p == nil then
-    local i = defualt_midich-1
+    local i = defualt_midicc-1
     for k,v in ipairs(param_assign) do
-      controls[k].midi = i + 1 
-      norns.pmap.new(k)
-      norns.pmap.assign(k,1,1,controls[k].midi) -- (id, dev, ch, cc)
-      i = i + 1     
+      controls[v].midi = i + 1 
+      norns.pmap.new(v)
+      norns.pmap.assign(v,1,1,controls[v].midi) -- (id, dev, ch, cc)
+      i = i + 1 
     end
     print ("created default pmap")
     norns.pmap.write()

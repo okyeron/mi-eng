@@ -1,7 +1,7 @@
 --
 --    macro oscillator b
 --
---    v 0.3.2 @okyeron
+--    v 0.3.3 @okyeron
 --
 --
 -- E1: model
@@ -29,10 +29,11 @@ local MacroB = require "mi-eng/lib/MacroB_engine"
 
 engine.name = "MacroB"
 
+local defualt_midicc = 32
+local metarandom_cc = 47
+
 local message = ""
 local glyph = ""
-local defualt_midich = 32
-local metarandom_cc = 47
 
 local pitch=60 --(midi note)
 local timbre=0.5
@@ -56,7 +57,7 @@ local metarandom = false
 local param_assign = {"timbre","color","decim","bits","ws","pitch","resamp","model", "ampAtk", "ampDec", "ampSus", "ampRel"}
 local braids_engines = {"CSAW","Morph","Saw Square","Sine Triangle","Buzz","Square Sub","Saw Sub","Square Sync","Saw Sync","Triple Saw","Triple Square","Triple Triangle","Triple Sine","Triple Ring Mod","Saw Swarm","Saw Comb","Toy","Digital Filter Lp","Digital Filter Pk","Digital Filter Bp","Digital Filter Hp","Vosim","Vowel","Vowel Fof","Harmonics","Fm","Feedback Fm","Chaotic Feedback Fm","Plucked","Bowed","Blown","Fluted","Struck Bell","Struck Drum","Kick","Cymbal","Snare","Wavetables","Wave Map","Wave Line","Wave Paraphonic","Filtered Noise","Twin Peaks Noise","Clocked Noise","Granular Cloud","Particle Noise","Digital Modulation","Question Mark"}
 local braids_glyphs = {"CSAW","/\\/|-_-_","/|/|-_-_","FOLD","_|_|_|_|_","-_-_SUB","/|/|SUB","SYN-_-_","SYN/|","/|/|x3","-_-_x3","/\\x3","SIx3","RING","/|/|/|/|","/|/|_|_|_","TOY*","ZLPF","ZPKF","ZBPF","ZHPF","VOSM","VOWL","VFOF","HARM","FM","FBFM","WTFM","PLUK","BOWD","BLOW","FLUTE","BELL","DRUM","KICK","CYMB","SNAR","WTBL","WMAP","WLIN","WTx4","NOIS","TWNQ","CLKN","CLOU","PRTC","QPSK","????"}
-local current_note = pitch
+
 
 function init()
 
@@ -81,7 +82,7 @@ function init()
   local p = norns.pmap.data.contour
   --p = pmap.get("contour")
   if p == nil then
-    local i = defualt_midich - 1
+    local i = defualt_midicc - 1
     for k,v in ipairs(param_assign) do
       controls[v].midi = i + 1 
       norns.pmap.new(v)
