@@ -1,7 +1,7 @@
 --
 --    macro oscillator b
 --
---    v 0.3.3 @okyeron
+--    v 0.3.4 @okyeron
 --
 --
 -- E1: model
@@ -92,9 +92,11 @@ function init()
     print ("created default pmap")
     norns.pmap.write()
   else 
-    print ("already have pmap")
+    --print ("already have pmap")
     for k,v in pairs(norns.pmap.data) do
-      controls[k].midi = v.cc
+      if controls[k] ~= nil then
+        controls[k].midi = v.cc
+      end
     end
     --tab.print (controls.bright)
   end
