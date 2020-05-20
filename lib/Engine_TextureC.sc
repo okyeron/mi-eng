@@ -7,25 +7,36 @@ Engine_TextureC : CroneEngine {
   }
 
   alloc {
-    SynthDef(\TextureC, {|inL, inR, out, pit=0.7, pos=0.5, size=0.5, dens=0.5, tex=0, drywet=0.5, in_gain=1, spread=0.5, rvb=0.5, fb=0, freeze=0, mode=0, lofi=0, trig=0, mul=1.0, add=0.0|
-      var sound = {
+    SynthDef(\TextureC, {| inL, inR, out, 
+      pit=0.7, pos=0.5, size=0.5, dens=0.5, tex=0, drywet=0.5, in_gain=1, spread=0.5, rvb=0.5, fb=0, freeze=0, mode=0, lofi=0, trig=0
+      pos_mod_amt=0, size_mod_amt=0, dens_mod_amt=0, tex_mod_amt=0, spread_mod_amt=0, fb_mod_amt=0,
+      pos_mod_freq=20, size_mod_freq=20, dens_mod_freq=20, tex_mod_freq=20, spread_mod_freq=20, fb_mod_freq=20 |
+
+      var sound, pos_mod, size_mod, dens_mod, tex_mod, spread_mod, fb_mod;
+
+      pos_mod = LFTri.kr(pos_mod_freq);
+      size_mod = LFTri.kr(size_mod_freq);
+      dens_mod = LFTri.kr(dens_mod_freq);
+      tex_mod = LFTri.kr(tex_mod_freq);
+      spread_mod = LFTri.kr(spread_mod_freq);
+      fb_mod = LFTri.kr(fb_mod_freq);
+
+      sound = {
         MiClouds.ar(SoundIn.ar([0,1]),
           pit, 
-          pos, 
-          size, 
-          dens, 
-          tex, 
+          pos + (pos_mod * pos_mod_amt), 
+          size + (size_mod * size_mod_amt), 
+          dens + (dens_mod * dens_mod_amt), 
+          tex + (tex_mod * tex_mod_amt), 
           drywet, 
           in_gain, 
-          spread, 
+          spread + (spread_mod * spread_mod_amt), 
           rvb, 
-          fb, 
+          fb + (fb_mod * fb_mod_amt), 
           freeze, 
           mode, 
           lofi, 
-          trig, 
-          mul, 
-          add
+          trig
         ); 
       };
       
@@ -51,9 +62,7 @@ Engine_TextureC : CroneEngine {
       \freeze, 0,
       \mode, 0,
       \lofi, 0,
-      \trig, 1,
-      \mul, 1.0,
-      \add, 0
+      \trig, 1
       ],
     context.xg);
 
@@ -63,15 +72,39 @@ Engine_TextureC : CroneEngine {
     }); 
     this.addCommand("pos", "f", {|msg|
       synth.set(\pos, msg[1]);
-    }); 
+    });
+    this.addCommand("pos_mod_freq", "f", {|msg|
+      synth.set(\pos_mod_freq, msg[1]);
+    });
+    this.addCommand("pos_mod_amt", "f", {|msg|
+      synth.set(\pos_mod_amt, msg[1]);
+    });
     this.addCommand("size", "f", {|msg|
       synth.set(\size, msg[1]);
+    });
+    this.addCommand("size_mod_freq", "f", {|msg|
+      synth.set(\size_mod_freq, msg[1]);
+    });
+    this.addCommand("size_mod_amt", "f", {|msg|
+      synth.set(\size_mod_amt, msg[1]);
     });
     this.addCommand("dens", "f", {|msg|
       synth.set(\dens, msg[1]);
     });
+    this.addCommand("dens_mod_freq", "f", {|msg|
+      synth.set(\dens_mod_freq, msg[1]);
+    });
+    this.addCommand("dens_mod_amt", "f", {|msg|
+      synth.set(\dens_mod_amt, msg[1]);
+    });
     this.addCommand("tex", "f", {|msg|
       synth.set(\tex, msg[1]);
+    });
+    this.addCommand("tex_mod_freq", "f", {|msg|
+      synth.set(\tex_mod_freq, msg[1]);
+    });
+    this.addCommand("tex_mod_amt", "f", {|msg|
+      synth.set(\tex_mod_amt, msg[1]);
     });
     this.addCommand("drywet", "f", {|msg|
       synth.set(\drywet, msg[1]);
@@ -88,6 +121,12 @@ Engine_TextureC : CroneEngine {
     this.addCommand("fb", "f", {|msg|
       synth.set(\fb, msg[1]);
     });
+    this.addCommand("fb_mod_freq", "f", {|msg|
+      synth.set(\fb_mod_freq, msg[1]);
+    });
+    this.addCommand("fb_mod_amt", "f", {|msg|
+      synth.set(\fb_mod_amt, msg[1]);
+    });
     this.addCommand("freeze", "i", {|msg|
       synth.set(\freeze, msg[1]);
     });
@@ -100,14 +139,6 @@ Engine_TextureC : CroneEngine {
     this.addCommand("trig", "i", {|msg|
       synth.set(\trig, msg[1]);
     });
-    this.addCommand("mul", "i", {|msg|
-      synth.set(\mul, msg[1]);
-    });
-    this.addCommand("add", "i", {|msg|
-      synth.set(\add, msg[1]);
-    });
-   
-
   }
 
   free {
