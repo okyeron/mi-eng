@@ -16,6 +16,7 @@
 -- Based on the supercollider Mi-UGens by Volker Bohm <https://github.com/v7b1/mi-UGens>
 -- Based on original code by Émilie Gillet <https://github.com/pichenettes/eurorack>
 --
+-- lfo's by @justmat
 --
 
 local UI = require "ui"
