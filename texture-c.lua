@@ -16,10 +16,11 @@
 -- Based on the supercollider Mi-UGens by Volker Bohm <https://github.com/v7b1/mi-UGens>
 -- Based on original code by Émilie Gillet <https://github.com/pichenettes/eurorack>
 --
+-- lfo's by @justmat
 --
 
 local UI = require "ui"
-local TextureC = require "mi-eng/lib/TextureC_engine"
+local TextureC = include "mi-eng/lib/TextureC_engine"
 
 engine.name = "TextureC"
 
@@ -47,7 +48,8 @@ local defualt_midicc = 32
 function init()
 
   -- Add params
-  TextureC.add_params()  
+  TextureC.add_params()
+  TextureC.add_lfo_params()
 
   -- initialize params
   params:set("pitch", pitch)
@@ -63,7 +65,7 @@ function init()
   params:set("freeze",freeze)
   params:set("mode",mode)
   params:set("lofi",lofi)
-  params:set("trig",trig)  
+  params:set("trig",trig)
 
   legend = clouds_mode[params:get("mode")+1]
 
