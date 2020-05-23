@@ -15,6 +15,7 @@ local wave_shapes = {"sine", "saw", "chaos"}
 
 local TextureC = {}
 
+
 function TextureC.add_lfo_params()
   params:add_separator("modulation")
 
@@ -25,7 +26,7 @@ function TextureC.add_lfo_params()
     controlspec = cs.new(0.01, 20.00, "exp", 0.01, 0.5, ""), action = engine.pos_mod_freq}
   params:add{type = "control", id = "pos_mod_amt", name = "position mod amount",
     controlspec = cs.new(0.00, 1.00, "lin", 0.01, 0.00, ""), action = engine.pos_mod_amt}
-  
+
   params:add_group("*grainsize", 3)
   params:add_option("size_mod_sel", "size mod source", wave_shapes, 1)
   params:set_action("size_mod_sel", function(v) engine.size_mod_sel(v - 1) end)
@@ -69,7 +70,7 @@ end
 function TextureC.add_params()
   
   params:add_separator ("Texture Synth")
-  
+
   params:add{type = "control", id = "pitch", name = "pitch",
     controlspec = cs.new(-48, 48, "lin", 1, 36, ""), action = engine.pit}
   params:add{type = "control", id = "position", name = "position",
