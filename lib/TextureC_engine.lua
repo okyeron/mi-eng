@@ -4,7 +4,7 @@
 -- @module TextureC
 -- @release v0.3.1
 -- @author Steven Noreyko @okyeron
---
+-- Lfo's by mat @justmat
 -- 
 -- Based on the supercollider Mi-UGens by Volker Bohm <https://github.com/v7b1/mi-UGens>
 -- Based on original code by Émilie Gillet <https://github.com/pichenettes/eurorack>
