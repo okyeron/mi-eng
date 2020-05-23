@@ -1,7 +1,7 @@
 Engine_TextureC : CroneEngine {
   
   var <synth;
-  
+
   *new { arg context, doneCallback;
     ^super.new(context, doneCallback);
   }
@@ -22,33 +22,33 @@ Engine_TextureC : CroneEngine {
       tex_mod = Select.ar(tex_mod_sel, [SinOsc.ar(tex_mod_freq, 0, 0.5, 0.5), LFSaw.ar(tex_mod_freq, 0.5, 0.5), GbmanN.ar(tex_mod_freq, 0.5, 0.5)]);
       spread_mod = Select.ar(spread_mod_sel, [SinOsc.ar(spread_mod_freq, 0, 0.5, 0.5), LFSaw.ar(spread_mod_freq, 0.5, 0.5), GbmanN.ar(spread_mod_freq, 0.5, 0.5)]);
       trig_mod = Select.kr(trig_sel, [trig, Dust2.kr(trig_freq)]);
-      
+
       sound = {
         MiClouds.ar(SoundIn.ar([0,1]),
-          pit, 
+          pit,
           Clip.kr(pos + (pos_mod * pos_mod_amt), 0.0, 1.0),
           Clip.kr(size + (size_mod * size_mod_amt), 0.0, 1.0),
           Clip.kr(dens + (dens_mod * dens_mod_amt), 0.0, 1.0),
           Clip.kr(tex + (tex_mod * tex_mod_amt), 0.0, 1.0),
-          drywet, 
-          in_gain, 
+          drywet,
+          in_gain,
           Clip.kr(spread + (spread_mod * spread_mod_amt), 0.0, 1.0),
-          rvb, 
+          rvb,
           fb,
-          freeze, 
-          mode, 
-          lofi, 
+          freeze,
+          mode,
+          lofi,
           trig_mod
-        ); 
+        );
       };
-      
+
       Out.ar(out, sound);
     }).add;
 
     context.server.sync;
 
     synth = Synth.new(\TextureC, [
-      \inL, context.in_b[0].index,      
+      \inL, context.in_b[0].index,
       \inR, context.in_b[1].index,
       \out, context.out_b.index,
       \pit, 0.7,
