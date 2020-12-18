@@ -76,6 +76,8 @@ function init()
   controls.ampSus = {ui = nil, midi = nil,}
   controls.ampRel = {ui = nil, midi = nil,}
 
+  params:add{type = "control", id = "midi_channel", name = "MIDI channel",
+    controlspec = controlspec.new(0, 16, "", 1, 0, ""), action = change_midi_channel}
 
   -- create midi pmap for 16n
   print ("check pmap")
@@ -104,7 +106,8 @@ function init()
 -- MIDI
 local mo = midi.connect() -- defaults to port 1 (which is set in SYSTEM > DEVICES)
 mo.event = function(data) 
-  d = midi.to_msg(data)
+d = midi.to_msg(data)
+if params:get('midi_channel') == 0 or d.ch == params:get('midi_channel') then
   if d.type == "note_on" then
     --print ("note-on: ".. d.note .. ", velocity:" .. d.vel)
     if metarandom then 
@@ -149,6 +152,7 @@ mo.event = function(data)
     end  
     redraw()    
   end 
+  end
 end
 
 
@@ -258,6 +262,11 @@ function meta_random()
     legend = "" .. braids_engines[meta]
     glyph = braids_glyphs[meta]
 
+end
+
+function change_midi_channel(d)
+  -- shush everything
+  engine.noteOff(0)
 end
 
 function redraw()
