@@ -103,58 +103,57 @@ function init()
     --tab.print (controls.bright)
   end
 
--- MIDI
-local mo = midi.connect() -- defaults to port 1 (which is set in SYSTEM > DEVICES)
-mo.event = function(data) 
-d = midi.to_msg(data)
-if params:get('midi_channel') == 0 or d.ch == params:get('midi_channel') then
-  if d.type == "note_on" then
-    --print ("note-on: ".. d.note .. ", velocity:" .. d.vel)
-    if metarandom then 
-      meta_random()
-    end
-    current_note = d.note
-    params:set("pitch", d.note)
-    controls.pitch.ui:set_value (d.note)
-    engine.noteOn(d.note, d.vel)
-    redraw()
-  elseif d.type == "note_off" then
-    engine.noteOff(0)
-  end 
-  if d.type == "cc" then
-    for k,v in pairs(controls) do
-        if d.cc == metarandom_cc and d.val > 64 then
-          metarandom = true
-        else
-          metarandom = false
-        end 
-        if controls[k].midi == d.cc then
-          --print ("cc: ".. d.cc .. ", val:" .. d.val)
-          if k == "pitch" then
-            controls[k].ui:set_value (d.val)
-            params:set(k, d.val)
-          elseif k == "model" then 
-            controls[k].ui:set_value (d.val)
-            params:set(k, d.val)
-            legend = braids_engines[params:get(k)]
-            glyph = braids_glyphs[params:get(k)]
-          elseif k == "decim" then
-            params:set(k, d.val/4)
-           controls[k].ui:set_value (d.val/4)
-          elseif k == "bits" then
-            params:set(k, util.round(d.val/21, 0.1))
-            controls[k].ui:set_value (d.val/21)
-          elseif k ~= nil then
-            params:set(k, d.val/100)
-            controls[k].ui:set_value (d.val/100)
+  -- MIDI
+  local mo = midi.connect() -- defaults to port 1 (which is set in SYSTEM > DEVICES)
+  mo.event = function(data) 
+    d = midi.to_msg(data)
+    if params:get('midi_channel') == 0 or d.ch == params:get('midi_channel') then
+      if d.type == "note_on" then
+        --print ("note-on: ".. d.note .. ", velocity:" .. d.vel)
+        if metarandom then 
+          meta_random()
+        end
+        current_note = d.note
+        params:set("pitch", d.note)
+        controls.pitch.ui:set_value (d.note)
+        engine.noteOn(d.note, d.vel)
+        redraw()
+      elseif d.type == "note_off" then
+        engine.noteOff(0)
+      end 
+      if d.type == "cc" then
+        for k,v in pairs(controls) do
+          if d.cc == metarandom_cc and d.val > 64 then
+            metarandom = true
+          else
+            metarandom = false
+          end 
+          if controls[k].midi == d.cc then
+            --print ("cc: ".. d.cc .. ", val:" .. d.val)
+            if k == "pitch" then
+              controls[k].ui:set_value (d.val)
+              params:set(k, d.val)
+            elseif k == "model" then 
+              controls[k].ui:set_value (d.val)
+              params:set(k, d.val)
+              legend = braids_engines[params:get(k)]
+              glyph = braids_glyphs[params:get(k)]
+            elseif k == "decim" then
+              params:set(k, d.val/4)
+             controls[k].ui:set_value (d.val/4)
+            elseif k == "bits" then
+              params:set(k, util.round(d.val/21, 0.1))
+              controls[k].ui:set_value (d.val/21)
+            elseif k ~= nil then
+              params:set(k, d.val/100)
+              controls[k].ui:set_value (d.val/100)
+            end
           end
-       end 
-    end  
-    redraw()    
-  end 
+        end
+      end
+    redraw()
   end
 end
-
 
   -- Add params
   MacroB.add_params()
