@@ -29,7 +29,7 @@ local MacroB = require "mi-eng/lib/MacroB_engine"
 
 engine.name = "MacroB"
 
-local defualt_midicc = 32
+local default_midicc = 32
 local metarandom_cc = 47
 
 local message = ""
@@ -82,7 +82,7 @@ function init()
   local p = norns.pmap.data.contour
   --p = pmap.get("contour")
   if p == nil then
-    local i = defualt_midicc - 1
+    local i = default_midicc - 1
     for k,v in ipairs(param_assign) do
       controls[v].midi = i + 1 
       norns.pmap.new(v)
