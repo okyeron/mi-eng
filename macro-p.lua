@@ -66,6 +66,9 @@ function init()
   controls.level = {ui = nil, midi = nil,}
   controls.decay = {ui = nil, midi = nil,}
   controls.lpg_colour = {ui = nil, midi = nil,}
+  
+  params:add{type = "control", id = "midi_channel", name = "MIDI channel",
+    controlspec = controlspec.new(0, 16, "", 1, 0, ""), action = change_midi_channel}
 
   -- create midi pmap for 16n
   print ("check pmap")
@@ -95,36 +98,37 @@ function init()
   local mo = midi.connect() -- defaults to port 1 (which is set in SYSTEM > DEVICES)
   mo.event = function(data) 
     d = midi.to_msg(data)
-    if d.type == "note_on" then
-      print ("note-on: ".. d.note .. ", velocity:" .. d.vel)
-      current_note = d.note
-      engine.noteOn(d.note, d.vel)
+    if params:get('midi_channel') == 0 or d.ch == params:get('midi_channel') then
+      if d.type == "note_on" then
+        print ("note-on: ".. d.note .. ", velocity:" .. d.vel)
+        current_note = d.note
+        engine.noteOn(d.note, d.vel)
+        redraw()
+      elseif d.type == "note_off" then
+        engine.noteOff(0)
+      end 
+      -- ccs
+      if d.type == "cc" then
+        for k,v in pairs(controls) do
+            if controls[k].midi == d.cc then
+              --print ("cc: ".. d.cc .. ", val:" .. d.val)
+              if k == "pitch" then
+                controls[k].ui:set_value (d.val)
+                params:set(k, d.val)
+              elseif k == "engine" then 
+                controls[k].ui:set_value (d.val)
+                params:set(k, d.val)
+                legend = plaits_engines[params:get("engine")]
+                png = params:get("engine")
+              elseif k ~= nil then
+                params:set(k, d.val/100)
+                controls[k].ui:set_value (d.val/100)
+              end
+           end 
+        end
+      end
       redraw()
-    elseif d.type == "note_off" then
-      engine.noteOff(0)
-    end 
-    -- ccs
-    if d.type == "cc" then
-      for k,v in pairs(controls) do
-          if controls[k].midi == d.cc then
-            --print ("cc: ".. d.cc .. ", val:" .. d.val)
-            if k == "pitch" then
-              controls[k].ui:set_value (d.val)
-              params:set(k, d.val)
-            elseif k == "engine" then 
-              controls[k].ui:set_value (d.val)
-              params:set(k, d.val)
-              legend = plaits_engines[params:get("engine")]
-              png = params:get("engine")
-            elseif k ~= nil then
-              params:set(k, d.val/100)
-              controls[k].ui:set_value (d.val/100)
-            end
-         end 
-      end  
-      redraw()    
-    end 
-
+    end
   end
 
   
@@ -220,6 +224,10 @@ function enc(n,d)
   redraw()
 end
 
+function change_midi_channel(d)
+  -- shush everything
+  engine.noteOff(0)
+end
 
 function redraw()
   -- screen redraw
