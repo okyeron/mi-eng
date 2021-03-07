@@ -80,30 +80,6 @@ function init()
     controlspec = controlspec.new(0, 16, "", 1, 0, ""), action = change_midi_channel}
 
   -- create midi pmap for 16n
-<<<<<<< HEAD
---  print ("check pmap")
---  local p = norns.pmap.data.contour
---  --p = pmap.get("contour")
---  if p == nil then
---    local i = defualt_midicc - 1
---    for k,v in ipairs(param_assign) do
---      controls[v].midi = i + 1 
---      norns.pmap.new(v)
---      norns.pmap.assign(v,1,1,controls[v].midi) -- (id, dev, ch, cc)
---      i = i + 1 
---    end
---    print ("created default pmap")
---    norns.pmap.write()
---  else 
---    --print ("already have pmap")
---    for k,v in pairs(norns.pmap.data) do
---      if controls[k] ~= nil then
---        controls[k].midi = v.cc
---      end
---    end
---    --tab.print (controls.bright)
---  end
-=======
   print ("check pmap")
   local p = norns.pmap.data.contour
   --p = pmap.get("contour")
@@ -126,7 +102,6 @@ function init()
     end
     --tab.print (controls.bright)
   end
->>>>>>> midi-channel
 
   -- MIDI
   local mo = midi.connect() -- defaults to port 1 (which is set in SYSTEM > DEVICES)
