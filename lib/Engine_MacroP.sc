@@ -14,7 +14,7 @@ Engine_MacroP : CroneEngine {
     SynthDef(\MacroP, {
       arg out, pitch=60.0, eng=0, harm=0.1, timbre=0.5, morph=0.5, trigger=0.0, level=0, fm_mod=0.0, timb_mod=0.0, morph_mod=0.0, decay=0.5, lpg_colour=0.5, mul=1.0;
       var sound = {
-        MiPlaits.ar(pitch,eng,harm,timbre,morph,trigger,level,fm_mod,timb_mod,morph_mod,lpg_colour,mul); 
+        MiPlaits.ar(pitch,eng,harm,timbre,morph,trigger,level,fm_mod,timb_mod,morph_mod,lpg_colour,mul)!2; 
       };
       Out.ar(out, sound);
     }).add;

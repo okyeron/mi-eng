@@ -20,7 +20,7 @@ Engine_MacroB : CroneEngine {
       var aenv, sound;
       aenv = EnvGen.ar(Env.adsr(ampAtk, ampDec, ampSus, ampRel, 1.0, ampCurve), gate: gate, doneAction:0);
       sound = {
-        MiBraids.ar(pitch, timbre, color, model, trig, resamp, decim, bits, ws, mul); 
+        MiBraids.ar(pitch, timbre, color, model, trig, resamp, decim, bits, ws, mul)!2; 
       };
 		
       Out.ar(out, sound * aenv);
