@@ -14,7 +14,7 @@ Engine_MacroB : CroneEngine {
   alloc {
   	
     SynthDef(\MacroB, {
-      arg out, pitch=60.0, timbre=0.5, color=0.5, model=0, trig=0, resamp=0, decim=0, bits=0, ws=0, mul=1.0, gate=0, 
+      arg out, pitch=60.0, timbre=0.5, color=0.5, model=0, trig=0, resamp=0, decim=0, bits=0, ws=0, mul=0.3, gate=0, 
       		// amplitude envelope params
 			ampAtk=0.05, ampDec=0.1, ampSus=1.0, ampRel=1.0, ampCurve= -1.0;
       var aenv, sound;
@@ -39,7 +39,7 @@ Engine_MacroB : CroneEngine {
 		\decim, 0,
 		\bits, 0,
 		\ws, 0,
-		\mul, 1.0,
+		\mul, 0.3,
 		\ampAtk, 0.05, 
 		\ampDec, 0.1, 
 		\ampSus, 1.0, 
