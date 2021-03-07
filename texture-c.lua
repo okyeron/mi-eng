@@ -85,6 +85,9 @@ function init()
   controls.mode = {ui = nil, midi = nil,}
   controls.lofi = {ui = nil, midi = nil,}
 
+  params:add{type = "control", id = "midi_channel", name = "MIDI channel",
+    controlspec = controlspec.new(0, 16, "", 1, 0, ""), action = change_midi_channel}
+
   -- create midi pmap for 16n
   print ("check pmap")
   local p = norns.pmap.data.pitch
@@ -112,32 +115,32 @@ function init()
   local mo = midi.connect() -- defaults to port 1 (which is set in SYSTEM > DEVICES)
   mo.event = function(data) 
     d = midi.to_msg(data)
-    if d.type == "note_on" then
-      --print ("note-on: ".. d.note .. ", velocity:" .. d.vel)
-      current_note = d.note
-      params:set("pitch",d.note)
-      params:set("trig",1)
-      redraw()
-    elseif d.type == "note_off" then
-      params:set("trig",0)
-    elseif d.type == "cc" then
-      --print ("cc: ".. d.cc .. " : " .. d.val)
-      for k,v in pairs(controls) do
-          if controls[k].midi == d.cc then
-            if k == "pitch" then 
-              params:set(k, d.val)
-              controls[k].ui:set_value (d.val)
-            else 
-              params:set(k, d.val/100)
-              controls[k].ui:set_value (d.val/100)
-            end
-          end 
-      end  
+    if params:get('midi_channel') == 0 or d.ch == params:get('midi_channel') then
+      if d.type == "note_on" then
+        --print ("note-on: ".. d.note .. ", velocity:" .. d.vel)
+        current_note = d.note
+        params:set("pitch",d.note)
+        params:set("trig",1)
+        redraw()
+      elseif d.type == "note_off" then
+        params:set("trig",0)
+      elseif d.type == "cc" then
+        --print ("cc: ".. d.cc .. " : " .. d.val)
+        for k,v in pairs(controls) do
+            if controls[k].midi == d.cc then
+              if k == "pitch" then 
+                params:set(k, d.val)
+                controls[k].ui:set_value (d.val)
+              else 
+                params:set(k, d.val/100)
+                controls[k].ui:set_value (d.val/100)
+              end
+            end 
+        end  
+      end
       redraw()
     end 
   end
-
-
 
   -- UI
   local row1 = 12
@@ -230,6 +233,9 @@ local function draw_cloud(x,y,lev)
   screen.stroke()
 end
 
+function change_midi_channel(d)
+  -- shush everything. But how?
+end
 
 function redraw()
   -- screen redraw
