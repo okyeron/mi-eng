@@ -34,9 +34,11 @@ local intern_exciter = 0
 local bypass = 0
 local easteregg = 0
 local current_note = pitch
+local pitch_from_midi = 0
+local ping_resonator = 0
 
--- 		arg in=0, trig=0, pit=60.0, struct=0.25, bright=0.5, damp=0.7, pos=0.25, model=0, poly=1,
---		intern_exciter=0, easteregg=0, bypass=0, mul=1.0, add=0;
+--    arg in=0, trig=0, pit=60.0, struct=0.25, bright=0.5, damp=0.7, pos=0.25, model=0, poly=1,
+--    intern_exciter=0, easteregg=0, bypass=0, mul=1.0, add=0;
 
 
 local param_assign = {"pitch","structure","brightness","damping","position","model","polyphony","intern_exciter","bypass","easteregg"}
@@ -44,7 +46,7 @@ local rings_models = {"Modal Resonator","Sympathetic String","Mod/Inharm String"
 local rings_egg_models = {"FX Formant","FX Chorus","FX Reverb","FX Formant","FX Ensemble","FX Reverb"}
 
 local current_note = pitch
-local defualt_midicc = 32
+local default_midicc = 32
 
 function init()
   -- UI controls
@@ -65,7 +67,7 @@ function init()
   local p = norns.pmap.data.pitch
 
   if p == nil then
-    local i = defualt_midicc - 1
+    local i = default_midicc - 1
     for k,v in ipairs(param_assign) do
       controls[v].midi = i + 1 
       norns.pmap.new(v)
@@ -89,47 +91,22 @@ function init()
   local mo = midi.connect() -- defaults to port 1 (which is set in SYSTEM > DEVICES)
   mo.event = function(data) 
     d = midi.to_msg(data)
-    if d.type == "note_on" then
-      --print ("note-on: ".. d.note .. ", velocity:" .. d.vel)
-      current_note = d.note
-      params:set("pitch", d.note)
-      controls.pitch.ui:set_value (d.note)
-      engine.noteOn(d.note)
-      redraw()
-    elseif d.type == "note_off" then
-      engine.noteOff(0)
-    end 
+    if params:get('pitch_from_midi') == 1 then
+      if d.type == "note_on" then
+        print ("note-on: ".. d.note .. ", velocity:" .. d.vel)
+        current_note = d.note
+        params:set("pitch", d.note)
+        controls.pitch.ui:set_value (d.note)
+        if params:get("ping_resonator") == 1 then
+          engine.noteOn(d.note)
+        end
+        redraw()
+      elseif d.type == "note_off" and params:get("ping_resonator") == 1 then
+        engine.noteOff(0)
+      end 
+    end
   end
-  -- controller on device 2
-  local mo2 = midi.connect(2) -- defaults to port 1 (which is set in SYSTEM > DEVICES)
-  mo2.event = function(data) 
-    d = midi.to_msg(data)
-    if d.type == "cc" then
-      for k,v in pairs(controls) do
-          if d.cc == 40 and d.val > 64 then
-            metarandom = true
-          else
-            metarandom = false
-          end 
-          if controls[k].midi == d.cc then
-            --print ("cc: ".. d.cc .. ", val:" .. d.val)
-            if k == "pitch" then
-              controls[k].ui:set_value (d.val)
-              params:set(k, d.val)
-            elseif k == "model" then
-              controls[k].ui:set_value (d.val)
-              params:set(k, d.val)
-              legend = rings_models[params:get(k)+1]
-            elseif k ~= nil then
-              params:set(k, d.val/100)
-              controls[k].ui:set_value (d.val/100)
-            end
-         end
-      end  
-      redraw()
 
-    end 
-  end
 
   -- Add params
   ResonateR.add_params()
@@ -149,6 +126,7 @@ function init()
   print(rings_models[params:get("model")+1])
   legend = rings_models[params:get("model")+1]
   
+  
   -- UI
   local row1 = 11
   local row2 = 22
@@ -165,15 +143,15 @@ function init()
 
   local col8 = 116
   
-  controls.pitch.ui = UI.Dial.new(col8, row3, 10, 1, 1, 127, 1)
-  controls.model.ui = UI.Dial.new(112, row1, 10, 1, 1, #rings_models, 1, 0, {},"", "mode")
+  controls.pitch.ui = UI.Dial.new(col8, row3, 10, 1, 1, 100, 1)
+  controls.model.ui = UI.Dial.new(112, row1, 10, 0, 1, #rings_models, 0.1, 0, {},"", "mode")
 
   controls.structure.ui =  UI.Dial.new(col1, row1, 10, 0, 0, 1, 0.01, 0, {}, "", "struc")
   controls.brightness.ui = UI.Dial.new(col2, row2, 10, 0, 0, 1, 0.01, 0, {}, "", "bright")
   controls.damping.ui =    UI.Dial.new(col3, row1, 10, 0, 0, 1, 0.01, 0, {}, "", "damp")
   controls.position.ui =   UI.Dial.new(col4, row2, 10, 0, 0, 1, 0.01, 0, {}, "", "pos")
 
-  controls.polyphony.ui =   UI.Dial.new(col1, row3, 10, 0, 0, 1, 0.01, 0, {},"", "poly")
+  controls.polyphony.ui =   UI.Dial.new(col1, row3, 10, 1, 1, 4, 0.01, 0, {},"", "poly")
   controls.intern_exciter.ui = UI.Dial.new(col2, row3, 10, 0, 0, 1, 0.01, 0, {},"", "exci")
   controls.bypass.ui =      UI.Dial.new(col3, row3, 10, 0, 0, 1, 0.01, 0, {},"", "byp")
   controls.easteregg.ui =   UI.Dial.new(col4, row3, 10, 0, 0, 1, 0.01, 0, {},"", "egg")
@@ -182,8 +160,43 @@ function init()
   for k,v in pairs(controls) do
      controls[k].ui:set_value (params:get(k))
   end  
-
+  initialisation = 0
   redraw()
+end
+
+
+function update_ui(dial) -- called by params set_action
+  if initialisation == 0 then -- to avoid function call on init
+    if dial == "model" then
+      controls[dial].ui:set_value (params:get(dial)+1)
+      if easteregg == 0 then -- scan through correct models
+        legend = rings_models[params:get(dial)+ 1]
+      else
+        legend = rings_egg_models[params:get(dial)+1]
+      end
+    elseif dial == "easteregg" then -- switch legend to equivalent model
+      --print(params:get(dial))
+      if params:get(dial) >= 1 then
+        easteregg = 1
+        legend = rings_egg_models[params:get("model")+1]
+        controls[dial].ui:set_value (params:get(dial))
+      else
+        easteregg = 0
+        legend = rings_models[params:get(dial)+ 1]
+        controls[dial].ui:set_value (params:get(dial))
+      end
+    elseif dial == "bypass" then
+      if params:get(dial) == 1 then
+        engine.bypass(1)
+      else
+        engine.bypass(0)
+      end
+      controls[dial].ui:set_value (params:get(dial))
+    else
+      controls[dial].ui:set_value (params:get(dial))
+    end
+    redraw()
+  end
 end
 
 function key(n,z)
